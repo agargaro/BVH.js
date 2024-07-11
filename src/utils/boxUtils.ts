@@ -9,13 +9,13 @@ export function unionBox(A: FloatArray, B: FloatArray, target: FloatArray, margi
   target[5] = (A[5] < B[5] ? B[5] : A[5]) + margin;
 }
 
-export function isBoxInsideBox(A: FloatArray, B: FloatArray): boolean {
-  if (B[0] > A[0]) return false;
-  if (B[1] < A[1]) return false;
-  if (B[2] > A[2]) return false;
-  if (B[3] < A[3]) return false;
-  if (B[4] > A[4]) return false;
-  if (B[5] < A[5]) return false;
+export function isBoxInsideBox(innerBox: FloatArray, outerBox: FloatArray): boolean {
+  if (outerBox[0] > innerBox[0]) return false;
+  if (outerBox[1] < innerBox[1]) return false;
+  if (outerBox[2] > innerBox[2]) return false;
+  if (outerBox[3] < innerBox[3]) return false;
+  if (outerBox[4] > innerBox[4]) return false;
+  if (outerBox[5] < innerBox[5]) return false;
   return true;
 }
 
