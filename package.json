@@ -1,0 +1,34 @@
+{
+  "name": "bvh.js",
+  "version": "0.0.1",
+  "description": "TODO",
+  "author": "Andrea Gargaro <devgargaro@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "module": "index.js",
+  "main": "index.cjs",
+  "types": "index.d.ts",
+  "repository": "https://github.com/agargaro/bvh.js",
+  "homepage": "https://github.com/agargaro/bvh.js#readme",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "prepublishOnly": "npm run build",
+    "postpublish": "npx rimraf dist",
+    "publish-beta": "npm version prerelease --preid=beta --git-tag-version false && npx webpack && cd publish && npm publish --tag beta --access public",
+    "publish-patch": "npm version patch --git-tag-version false && npx webpack && cd publish && npm publish --access public",
+    "publish-minor": "npm version minor --git-tag-version false && npx webpack && cd publish && npm publish --access public",
+    "publish-major": "npm version major --git-tag-version false && npx webpack && cd publish && npm publish --access public"
+  },
+  "keywords": [
+    "bvh",
+    "raycast",
+    "frustum culling"
+  ],
+  "devDependencies": {
+    "typescript": "^5.1.3",
+    "vite": "^5.2.13",
+    "vite-plugin-static-copy": "^1.0.6",
+    "vite-plugin-dts": "^3.9.1"
+  }
+}
