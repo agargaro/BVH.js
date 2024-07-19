@@ -27,8 +27,6 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
     this.root = buildNode(0, maxCount, null);
 
-    return; // is this useless probably TODO remove
-
     function buildNode(offset: number, count: number, parent: HybridNode<L>): HybridNode<L> {
       if (count === 1) {
         const box = boxes[offset];
@@ -41,13 +39,11 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
       updateSplitData();
 
-      const leftEndOffset = split(offset, count);
+      // const leftEndOffset = split(offset, count);
+      let leftEndOffset = split(offset, count);
 
       if (leftEndOffset === offset || leftEndOffset === offset + count) {
-        // TROVARE ALTRA WAY TO SPLIT @todoooooooooo
-        // onLeafCreation TODO
-        throw new Error('SPLIT FAILED.');
-        // return { box, object: null, area: areaBox(box) };
+        leftEndOffset = offset + Math.floor(count / 2) // this is a workaround. TODO IMPROVE THIS TRYING DIFFERENT AXIS
       }
 
       const node: HybridNode<L> = { box, area: areaBox(box), parent };
