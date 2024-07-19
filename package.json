@@ -1,12 +1,12 @@
 {
   "name": "bvh.js",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "BVH implementation",
   "author": "Andrea Gargaro <devgargaro@gmail.com>",
   "license": "MIT",
   "type": "module",
   "module": "index.js",
-  "main": "index.cjs",
+  "main": "index.umd.cjs",
   "types": "index.d.ts",
   "repository": "https://github.com/agargaro/bvh.js",
   "homepage": "https://github.com/agargaro/bvh.js#readme",
@@ -22,7 +22,12 @@
   "keywords": [
     "bvh",
     "raycast",
-    "frustum culling"
+    "frustum culling",
+    "bounds-hierarchy",
+    "performance",
+    "three",
+    "intersection",
+    "acceleration"
   ],
   "devDependencies": {
     "typescript": "^5.1.3",

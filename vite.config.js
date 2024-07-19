@@ -8,7 +8,7 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'BVH',
+      name: 'bvh_js',
       fileName: 'index',
       formats: ['es', 'umd'],
     },
