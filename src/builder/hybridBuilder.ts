@@ -255,7 +255,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     return bestNode;
 
     function _findBestSibling(node: HybridNode<L>, inheritedCost: number): void {
-      if (node.object) return;
+      if (node.object !== undefined) return;
 
       const nodeL = node.left;
       const nodeR = node.right;
@@ -334,7 +334,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
       let nodeSwap2: HybridNode<L>;
       let bestCost = 0; // todo can we use rotatationBestCostTolerance?
 
-      if (!right.object) { // is not leaf
+      if (right.object === undefined) { // is not leaf
         const RL = right.left;
         const RR = right.right;
         const rightArea = right.area;
@@ -355,7 +355,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
         }
       }
 
-      if (!left.object) { // is not leaf
+      if (left.object === undefined) { // is not leaf
         const LL = left.left;
         const LR = left.right;
         const leftArea = left.area;

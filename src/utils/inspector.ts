@@ -39,7 +39,7 @@ export class BVHInspector {
         const area = areaBox(node.box);
         this.surfaceScore += area;
 
-        if (node.object) {
+        if (node.object !== undefined) {
             this.totalLeafNodes++;
 
             if (depth < this.minDepth) this.minDepth = depth;

@@ -124,7 +124,7 @@ export class IncrementalBuilder<L> implements IBVHBuilder<IncrementalNodeData<L>
     return bestNode;
 
     function _findBestSibling(node: IncrementalNode<L>, inheritedCost: number): void {
-      if (node.object) return;
+      if (node.object !== undefined) return;
 
       const nodeL = node.left;
       const nodeR = node.right;
@@ -203,7 +203,7 @@ export class IncrementalBuilder<L> implements IBVHBuilder<IncrementalNodeData<L>
       let nodeSwap2: IncrementalNode<L>;
       let bestCost = 0; // todo can we use rotatationBestCostTolerance?
 
-      if (!right.object) { // is not leaf
+      if (right.object === undefined) { // is not leaf
         const RL = right.left;
         const RR = right.right;
         const rightArea = right.area;
@@ -224,7 +224,7 @@ export class IncrementalBuilder<L> implements IBVHBuilder<IncrementalNodeData<L>
         }
       }
 
-      if (!left.object) { // is not leaf
+      if (left.object === undefined) { // is not leaf
         const LL = left.left;
         const LR = left.right;
         const leftArea = left.area;

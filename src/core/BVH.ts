@@ -45,7 +45,7 @@ export class BVH<N, L> {
 
     function _traverse(node: BVHNode<N, L>, depth: number): void {
 
-      if (node.object) { // is leaf
+      if (node.object !== undefined) { // is leaf
         callback(node, depth);
         return;
       }
@@ -75,7 +75,7 @@ export class BVH<N, L> {
     function _intersectRay(node: BVHNode<N, L>): void {
       if (!intersectRayBox(node.box, origin, _dirInv, _sign, near, far)) return;
 
-      if (node.object) {
+      if (node.object !== undefined) {
         result.push(node.object);
         return;
       }
@@ -101,7 +101,7 @@ export class BVH<N, L> {
       }
 
       // 1+ = intersect
-      if (node.object) {
+      if (node.object !== undefined) {
         result.push(node.object);
         return;
       }
@@ -111,7 +111,7 @@ export class BVH<N, L> {
     }
 
     function showAll(node: BVHNode<N, L>): void {
-      if (node.object) {
+      if (node.object !== undefined) {
         result.push(node.object);
         return;
       }
