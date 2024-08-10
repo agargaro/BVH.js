@@ -1,6 +1,6 @@
-import { BVHNode, FloatArray } from '../core/BVHNode';
-import { getLongestAxis } from '../utils/boxUtils';
-import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder';
+import { BVHNode, FloatArray } from '../core/BVHNode.js';
+import { getLongestAxis } from '../utils/boxUtils.js';
+import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
 export type TopDownNode<L> = BVHNode<{}, L>;
 

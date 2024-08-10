@@ -1,7 +1,7 @@
-import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder";
-import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum";
-import { intersectRayBox } from "../utils/intersectUtils";
-import { BVHNode, FloatArray } from "./BVHNode";
+import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
+import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
+import { intersectRayBox } from "../utils/intersectUtils.js";
+import { BVHNode, FloatArray } from "./BVHNode.js";
 
 export class BVH<N, L> {
   public builder: IBVHBuilder<N, L>;

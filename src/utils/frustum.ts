@@ -1,4 +1,4 @@
-import { FloatArray } from "../core/BVHNode";
+import { FloatArray } from "../core/BVHNode.js";
 
 export const WebGLCoordinateSystem = 0;
 export const WebGPUCoordinateSystem = 1;

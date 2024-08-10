@@ -1,4 +1,4 @@
-import { BVHNode, FloatArray } from "../core/BVHNode";
+import { BVHNode, FloatArray } from "../core/BVHNode.js";
 
 export type onLeafCreationCallback<N, L> = (node: BVHNode<N, L>) => void;
 

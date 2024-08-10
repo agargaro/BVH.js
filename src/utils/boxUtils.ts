@@ -1,4 +1,4 @@
-import { FloatArray } from '../core/BVHNode';
+import { FloatArray } from '../core/BVHNode.js';
 
 export function unionBox(A: FloatArray, B: FloatArray, target: FloatArray, margin: number): void {
   target[0] = (A[0] > B[0] ? B[0] : A[0]) - margin;

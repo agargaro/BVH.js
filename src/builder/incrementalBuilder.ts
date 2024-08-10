@@ -1,6 +1,6 @@
-import { BVHNode, FloatArray } from '../core/BVHNode';
-import { areaBox, areaFromTwoBoxes, isBoxInsideBox, unionBox } from '../utils/boxUtils';
-import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder';
+import { BVHNode, FloatArray } from '../core/BVHNode.js';
+import { areaBox, areaFromTwoBoxes, isBoxInsideBox, unionBox } from '../utils/boxUtils.js';
+import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
 export type IncrementalNode<L> = BVHNode<IncrementalNodeData<L>, L>;
 

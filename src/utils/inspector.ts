@@ -1,6 +1,6 @@
-import { BVH } from "../core/BVH";
-import { BVHNode } from "../core/BVHNode";
-import { areaBox } from "./boxUtils";
+import { BVH } from "../core/BVH.js";
+import { BVHNode } from "../core/BVHNode.js";
+import { areaBox } from "./boxUtils.js";
 
 export class BVHInspector {
     public totalNodes = 0;
