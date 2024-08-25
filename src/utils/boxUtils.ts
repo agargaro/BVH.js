@@ -68,3 +68,23 @@ export function getLongestAxis(box: FloatArray): number {
   if (xSize > ySize) return xSize > zSize ? 0 : 2;
   return ySize > zSize ? 1 : 2;
 }
+
+export function distanceSquaredPointToBox(box: FloatArray, point: FloatArray) {
+  const xMin = box[0] - point[0];
+  const xMax = point[0] - box[1];
+  const dx = xMin > xMax ? (xMin > 0 ? xMin : 0) : (xMax > 0 ? xMax : 0);
+
+  const yMin = box[2] - point[1];
+  const yMax = point[1] - box[3];
+  const dy = yMin > yMax ? (yMin > 0 ? yMin : 0) : (yMax > 0 ? yMax : 0);
+
+  const zMin = box[4] - point[2];
+  const zMax = point[2] - box[5];
+  const dz = zMin > zMax ? (zMin > 0 ? zMin : 0) : (zMax > 0 ? zMax : 0);
+
+  return dx * dx + dy * dy + dz * dz;
+}
+
+export function distancePointToBox(box: FloatArray, point: FloatArray) {
+  return Math.sqrt(distanceSquaredPointToBox(box, point));
+}

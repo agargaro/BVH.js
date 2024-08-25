@@ -1,4 +1,5 @@
 import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
+import { distanceSquaredPointToBox } from "../utils/boxUtils.js";
 import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
 import { intersectRayBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
@@ -121,6 +122,44 @@ export class BVH<N, L> {
     }
   }
 
+  public closestToPoint(point: FloatArray): L {
+    let bestDistance = Infinity;
+    let bestLeaf: L = null;
+
+    _closestToPoint(this.root);
+
+    return bestLeaf;
+
+    function _closestToPoint(node: BVHNode<N, L>): void {
+      if (node.object !== undefined) {
+        // TODO add callback 
+
+        bestDistance = distanceSquaredPointToBox(node.box, point);
+        bestLeaf = node.object;
+
+        return;
+      }
+
+      const leftDistance = distanceSquaredPointToBox(node.left.box, point);
+      const rightDistance = distanceSquaredPointToBox(node.right.box, point);
+
+      if (leftDistance < rightDistance) {
+
+        if (leftDistance < bestDistance) {
+
+          _closestToPoint(node.left);
+          if (rightDistance < bestDistance) _closestToPoint(node.right);
+
+        }
+
+      } else if (rightDistance < bestDistance) {
+
+        _closestToPoint(node.right);
+        if (leftDistance < bestDistance) _closestToPoint(node.left);
+
+      }
+    }
+  }
 }
 
 const _dirInv = new Float64Array(3);
