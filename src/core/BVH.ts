@@ -85,7 +85,7 @@ export class BVH<N, L> {
     }
   }
 
-  public frustumCulling(projectionMatrix: FloatArray | number[], result: L[] = []): void {
+  public frustumCulling(projectionMatrix: FloatArray | number[], onFrustumIntersected: (leaf: L) => void): void {
     const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
 
     traverseVisibility(this.root, 0b111111);
@@ -102,7 +102,7 @@ export class BVH<N, L> {
 
       // 1+ = intersect
       if (node.object !== undefined) {
-        result.push(node.object);
+        onFrustumIntersected(node.object);
         return;
       }
 
@@ -112,7 +112,7 @@ export class BVH<N, L> {
 
     function showAll(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-        result.push(node.object);
+        onFrustumIntersected(node.object);
         return;
       }
 
