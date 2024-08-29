@@ -3,11 +3,14 @@ import { areaBox, areaFromTwoBoxes, expandBox, getLongestAxis, isBoxInsideBox, u
 import { SortedListDesc } from '../utils/sortedListDesc.js';
 import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
+// TODO: make test per controllare che tutto sia gerarchico (i bbox)
+// TODO: test incrementale
+
 export type HybridNode<L> = BVHNode<HybridNodeData<L>, L>;
 
 export type HybridNodeData<L> = {
   parent?: HybridNode<L>;
-  area?: number;
+  // area?: number;
 };
 
 export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
@@ -53,7 +56,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
         leftEndOffset = offset + (count >> 1) // this is a workaround. TODO IMPROVE THIS TRYING DIFFERENT AXIS
       }
 
-      const node: HybridNode<L> = { box, area: areaBox(box), parent };
+      const node: HybridNode<L> = { box, parent };
 
       node.left = buildNode(offset, leftEndOffset - offset, node);
       node.right = buildNode(leftEndOffset, count - leftEndOffset + offset, node);
@@ -162,12 +165,8 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
   public insert(object: L, box: FloatArray): HybridNode<L> {
     const leaf = this.createLeafNode(object, box);
 
-    if (this.root === null) {
-      leaf.area = areaBox(box);
-      this.root = leaf;
-    } else {
-      this.insertLeaf(leaf);
-    }
+    if (this.root === null) this.root = leaf;
+    else this.insertLeaf(leaf);
 
     return leaf;
   }
@@ -220,7 +219,6 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     const oldParent = sibling.parent;
 
     if (newParent === undefined) {
-      leaf.area = areaBox(leaf.box);
       newParent = this.createInternalNode(oldParent, sibling, leaf);
     } else {
       newParent.parent = oldParent;
@@ -239,7 +237,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
   }
 
   protected createLeafNode(object: L, box: FloatArray): HybridNode<L> {
-    return { box, object, parent: null, area: null };
+    return { box, object, parent: null };
   }
 
   protected createInternalNode(parent: HybridNode<L>, sibling: HybridNode<L>, leaf: HybridNode<L>): HybridNode<L> {
@@ -262,7 +260,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     function _findBestSiblingSorted(): void {
       sortedList.clear();
       let count = 0;
-      let nodeObj = { node: root, inheritedCost: bestCost - root.area };
+      let nodeObj = { node: root, inheritedCost: bestCost - areaBox(root.box) };
 
       do {
         const { node, inheritedCost } = nodeObj;
@@ -281,11 +279,11 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
         const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
         const currentCostL = directCostL + inheritedCost;
-        const inheritedCostL = inheritedCost + directCostL - nodeL.area;
+        const inheritedCostL = inheritedCost + directCostL - areaBox(nodeL.box);
 
         const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
         const currentCostR = directCostR + inheritedCost;
-        const inheritedCostR = inheritedCost + directCostR - nodeR.area;
+        const inheritedCostR = inheritedCost + directCostR - areaBox(nodeR.box);
 
         if (currentCostL > currentCostR) {
           if (bestCost > currentCostR) {
@@ -326,11 +324,11 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
       const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
       const currentCostL = directCostL + inheritedCost;
-      const inheritedCostL = inheritedCost + directCostL - nodeL.area;
+      const inheritedCostL = inheritedCost + directCostL - areaBox(nodeL.box);
 
       const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
       const currentCostR = directCostR + inheritedCost;
-      const inheritedCostR = inheritedCost + directCostR - nodeR.area;
+      const inheritedCostR = inheritedCost + directCostR - areaBox(nodeR.box);
 
       if (currentCostL > currentCostR) {
         if (bestCost > currentCostR) {
@@ -373,7 +371,6 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
       // TODO CHECK if area doesn't change, stop iterating
 
       unionBox(left.box, right.box, nodeBox);
-      node.area = areaBox(nodeBox);
 
       node = node.parent;
     } while (node);
@@ -388,7 +385,6 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
     const originalNextNode = originalNode === node.left ? node.right : node.left;
     unionBoxMargin(originalNodeBox, originalNextNode.box, nodeBox, margin);
-    node.area = areaBox(nodeBox);
 
     // check to skip rotation if...
 
@@ -402,8 +398,6 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
       // TODO FIX
       if (!expandBox(originalNodeBox, nodeBox, margin)) return; // this avoid some rotations but is less expensive
 
-      node.area = areaBox(nodeBox);
-
       let nodeSwap1: HybridNode<L> = null;
       let nodeSwap2: HybridNode<L> = null;
       let bestCost = 0;
@@ -411,7 +405,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
       if (right.object === undefined) { // is not leaf
         const RL = right.left;
         const RR = right.right;
-        const rightArea = right.area;
+        const rightArea = areaBox(right.box);
 
         const diffRR = rightArea - areaFromTwoBoxes(leftBox, RL.box);
         const diffRL = rightArea - areaFromTwoBoxes(leftBox, RR.box);
@@ -432,7 +426,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
       if (left.object === undefined) { // is not leaf
         const LL = left.left;
         const LR = left.right;
-        const leftArea = left.area;
+        const leftArea = areaBox(left.box);
 
         const diffLR = leftArea - areaFromTwoBoxes(rightBox, LL.box);
         const diffLL = leftArea - areaFromTwoBoxes(rightBox, LR.box);
@@ -470,7 +464,6 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     B.parent = parentA;
 
     unionBox(parentB.left.box, parentB.right.box, parentBox); // capire
-    parentB.area = areaBox(parentBox);
   }
 
 }
