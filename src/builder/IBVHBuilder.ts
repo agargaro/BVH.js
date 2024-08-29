@@ -10,4 +10,5 @@ export interface IBVHBuilder<N, L> {
   move(node: BVHNode<N, L>): void;
   delete(node: BVHNode<N, L>): BVHNode<N, L>;
   clear(): void;
+  readonly highPrecision: boolean;
 }

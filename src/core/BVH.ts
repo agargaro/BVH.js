@@ -1,5 +1,5 @@
 import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
-import { distanceSquaredPointToBox } from "../utils/boxUtils.js";
+import { closestDistanceSquaredPointToBox } from "../utils/boxUtils.js";
 import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
 import { intersectRayBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
@@ -7,6 +7,8 @@ import { BVHNode, FloatArray } from "./BVHNode.js";
 export class BVH<N, L> {
   public builder: IBVHBuilder<N, L>;
   public frustum: Frustum;
+  protected _dirInv: FloatArray;
+  protected _sign = new Uint8Array(3);
 
   public get root(): BVHNode<N, L> {
     return this.builder.root;
@@ -14,7 +16,9 @@ export class BVH<N, L> {
 
   constructor(builder: IBVHBuilder<N, L>, coordinateSystem: CoordinateSystem = WebGLCoordinateSystem) {
     this.builder = builder;
-    this.frustum = new Frustum(coordinateSystem);
+    const highPrecision = builder.highPrecision;
+    this.frustum = new Frustum(highPrecision, coordinateSystem);
+    this._dirInv = highPrecision ? new Float64Array(3) : new Float32Array(3);
   }
 
   public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
@@ -61,20 +65,23 @@ export class BVH<N, L> {
   }
 
   public intersectRay(dir: FloatArray, origin: FloatArray, near = 0, far = Infinity, result: L[] = []): L[] {
-    _dirInv[0] = 1 / dir[0];
-    _dirInv[1] = 1 / dir[1];
-    _dirInv[2] = 1 / dir[2];
+    const dirInv = this._dirInv;
+    const sign = this._sign;
 
-    _sign[0] = _dirInv[0] < 0 ? 1 : 0;
-    _sign[1] = _dirInv[1] < 0 ? 1 : 0;
-    _sign[2] = _dirInv[2] < 0 ? 1 : 0;
+    dirInv[0] = 1 / dir[0];
+    dirInv[1] = 1 / dir[1];
+    dirInv[2] = 1 / dir[2];
+
+    sign[0] = dirInv[0] < 0 ? 1 : 0;
+    sign[1] = dirInv[1] < 0 ? 1 : 0;
+    sign[2] = dirInv[2] < 0 ? 1 : 0;
 
     _intersectRay(this.root);
 
     return result;
 
     function _intersectRay(node: BVHNode<N, L>): void {
-      if (!intersectRayBox(node.box, origin, _dirInv, _sign, near, far)) return;
+      if (!intersectRayBox(node.box, origin, dirInv, sign, near, far)) return;
 
       if (node.object !== undefined) {
         result.push(node.object);
@@ -134,14 +141,14 @@ export class BVH<N, L> {
       if (node.object !== undefined) {
         // TODO add callback 
 
-        bestDistance = distanceSquaredPointToBox(node.box, point);
+        bestDistance = closestDistanceSquaredPointToBox(node.box, point);
         bestLeaf = node.object;
 
         return;
       }
 
-      const leftDistance = distanceSquaredPointToBox(node.left.box, point);
-      const rightDistance = distanceSquaredPointToBox(node.right.box, point);
+      const leftDistance = closestDistanceSquaredPointToBox(node.left.box, point);
+      const rightDistance = closestDistanceSquaredPointToBox(node.right.box, point);
 
       if (leftDistance < rightDistance) {
 
@@ -162,5 +169,3 @@ export class BVH<N, L> {
   }
 }
 
-const _dirInv = new Float64Array(3);
-const _sign = new Uint8Array(3);

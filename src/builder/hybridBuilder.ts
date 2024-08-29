@@ -1,5 +1,6 @@
-import { BVHNode, FloatArray } from '../core/BVHNode.js';
-import { areaBox, areaFromTwoBoxes, getLongestAxis, isBoxInsideBox, unionBox } from '../utils/boxUtils.js';
+import { BVHNode, FloatArray, FloatArrayType } from '../core/BVHNode.js';
+import { areaBox, areaFromTwoBoxes, expandBox, getLongestAxis, isBoxInsideBox, unionBox, unionBoxMargin } from '../utils/boxUtils.js';
+import { SortedListDesc } from '../utils/sortedListDesc.js';
 import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
 export type HybridNode<L> = BVHNode<HybridNodeData<L>, L>;
@@ -11,16 +12,22 @@ export type HybridNodeData<L> = {
 
 export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
   public root: HybridNode<L> = null;
+  public readonly highPrecision: boolean;
+  protected _sortedList = new SortedListDesc();
   protected _margin: number;
+  protected _typeArray: FloatArrayType;
 
-  constructor(margin: number) {
+  constructor(margin = 0, highPrecision = false) {
     this._margin = margin;
+    this.highPrecision = highPrecision;
+    this._typeArray = highPrecision ? Float64Array : Float32Array;
   }
 
   public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<HybridNodeData<L>, L>): void {
     const margin = this._margin;
     const maxCount = boxes.length;
-    const typeArray = boxes[0].BYTES_PER_ELEMENT === 4 ? Float32Array : Float64Array;
+    const typeArray = this._typeArray;
+    if (typeArray !== (boxes[0].BYTES_PER_ELEMENT === 4 ? Float32Array : Float64Array)) console.warn("Different precision.");
     const centroid = new typeArray(6);
     let axis: number;
     let position: number;
@@ -43,7 +50,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
       let leftEndOffset = split(offset, count);
 
       if (leftEndOffset === offset || leftEndOffset === offset + count) {
-        leftEndOffset = offset + Math.floor(count / 2) // this is a workaround. TODO IMPROVE THIS TRYING DIFFERENT AXIS
+        leftEndOffset = offset + (count >> 1) // this is a workaround. TODO IMPROVE THIS TRYING DIFFERENT AXIS
       }
 
       const node: HybridNode<L> = { box, area: areaBox(box), parent };
@@ -208,14 +215,12 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
   }
 
   protected insertLeaf(leaf: HybridNode<L>, newParent?: HybridNode<L>): void {
-    const area = !newParent ? areaBox(leaf.box) : leaf.area;
-
-    const sibling = this.findBestSibling(leaf.box, area);
+    const sibling = this.findBestSibling(leaf.box);
 
     const oldParent = sibling.parent;
 
-    if (!newParent) {
-      leaf.area = area;
+    if (newParent === undefined) {
+      leaf.area = areaBox(leaf.box);
       newParent = this.createInternalNode(oldParent, sibling, leaf);
     } else {
       newParent.parent = oldParent;
@@ -226,15 +231,11 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     sibling.parent = newParent;
     leaf.parent = newParent;
 
-    if (oldParent === null) {
-      // The sibling was the root
-      this.root = newParent;
-    } else {
-      if (oldParent.left == sibling) oldParent.left = newParent;
-      else oldParent.right = newParent;
-    }
+    if (oldParent === null) this.root = newParent;
+    else if (oldParent.left === sibling) oldParent.left = newParent;
+    else oldParent.right = newParent;
 
-    this.refitAndRotate(newParent);
+    this.refitAndRotate(leaf);
   }
 
   protected createLeafNode(object: L, box: FloatArray): HybridNode<L> {
@@ -242,17 +243,80 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
   }
 
   protected createInternalNode(parent: HybridNode<L>, sibling: HybridNode<L>, leaf: HybridNode<L>): HybridNode<L> {
-    return { parent, left: sibling, right: leaf, box: new Float64Array(6) };
+    return { parent, left: sibling, right: leaf, box: new this._typeArray(6) };
   }
 
-  protected findBestSibling(leafBox: FloatArray, leafArea: number): HybridNode<L> {
+  protected findBestSibling(leafBox: FloatArray): HybridNode<L> {
     const root = this.root;
     let bestNode = root;
     let bestCost = areaFromTwoBoxes(leafBox, root.box);
+    const sortedList = this._sortedList;
+    const sortedListMaxCount = 16;
 
-    _findBestSibling(root, bestCost - root.area);
+    if (this.root.object !== undefined) return root;
+
+    _findBestSiblingSorted();
 
     return bestNode;
+
+    function _findBestSiblingSorted(): void {
+      sortedList.clear();
+      let count = 0;
+      let nodeObj = { node: root, inheritedCost: bestCost - root.area };
+
+      do {
+        const { node, inheritedCost } = nodeObj;
+
+        if (inheritedCost >= bestCost) return;
+
+        if (count >= sortedListMaxCount) {
+          _findBestSibling(node, inheritedCost);
+          continue;
+        }
+
+        count++;
+
+        const nodeL = node.left;
+        const nodeR = node.right;
+
+        const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
+        const currentCostL = directCostL + inheritedCost;
+        const inheritedCostL = inheritedCost + directCostL - nodeL.area;
+
+        const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
+        const currentCostR = directCostR + inheritedCost;
+        const inheritedCostR = inheritedCost + directCostR - nodeR.area;
+
+        if (currentCostL > currentCostR) {
+          if (bestCost > currentCostR) {
+            bestNode = nodeR;
+            bestCost = currentCostR;
+          }
+        } else if (bestCost > currentCostL) {
+          bestNode = nodeL;
+          bestCost = currentCostL;
+        }
+
+        if (inheritedCostR > inheritedCostL) {
+
+          if (inheritedCostL >= bestCost) continue;
+          if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
+
+          if (inheritedCostR >= bestCost) continue;
+          if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
+
+        } else {
+
+          if (inheritedCostR >= bestCost) continue;
+          if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
+
+          if (inheritedCostL >= bestCost) continue;
+          if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
+
+        }
+
+      } while (nodeObj = sortedList.pop());
+    }
 
     function _findBestSibling(node: HybridNode<L>, inheritedCost: number): void {
       if (node.object !== undefined) return;
@@ -273,27 +337,25 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
           bestNode = nodeR;
           bestCost = currentCostR;
         }
-      } else {
-        if (bestCost > currentCostL) {
-          bestNode = nodeL;
-          bestCost = currentCostL;
-        }
+      } else if (bestCost > currentCostL) {
+        bestNode = nodeL;
+        bestCost = currentCostL;
       }
 
       if (inheritedCostR > inheritedCostL) {
 
-        if (leafArea + inheritedCostL >= bestCost) return;
+        if (inheritedCostL >= bestCost) return;
         _findBestSibling(nodeL, inheritedCostL);
 
-        if (leafArea + inheritedCostR >= bestCost) return;
+        if (inheritedCostR >= bestCost) return;
         _findBestSibling(nodeR, inheritedCostR);
 
       } else {
 
-        if (leafArea + inheritedCostR >= bestCost) return;
+        if (inheritedCostR >= bestCost) return;
         _findBestSibling(nodeR, inheritedCostR);
 
-        if (leafArea + inheritedCostL >= bestCost) return;
+        if (inheritedCostL >= bestCost) return;
         _findBestSibling(nodeL, inheritedCostL);
 
       }
@@ -310,7 +372,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
       // TODO CHECK if area doesn't change, stop iterating
 
-      unionBox(left.box, right.box, nodeBox, margin);
+      unionBox(left.box, right.box, nodeBox);
       node.area = areaBox(nodeBox);
 
       node = node.parent;
@@ -319,20 +381,32 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
   protected refitAndRotate(node: HybridNode<L>): void {
     const margin = this._margin;
+    const originalNode = node;
+    const originalNodeBox = originalNode.box;
+    node = node.parent;
+    const nodeBox = node.box;
 
-    do {
+    const originalNextNode = originalNode === node.left ? node.right : node.left;
+    unionBoxMargin(originalNodeBox, originalNextNode.box, nodeBox, margin);
+    node.area = areaBox(nodeBox);
+
+    // check to skip rotation if...
+
+    while (node = node.parent) {
       const left = node.left;
       const right = node.right;
       const nodeBox = node.box;
       const leftBox = left.box;
       const rightBox = right.box;
 
-      unionBox(leftBox, rightBox, nodeBox, margin);
+      // TODO FIX
+      if (!expandBox(originalNodeBox, nodeBox, margin)) return; // this avoid some rotations but is less expensive
+
       node.area = areaBox(nodeBox);
 
-      let nodeSwap1: HybridNode<L>;
-      let nodeSwap2: HybridNode<L>;
-      let bestCost = 0; // todo can we use rotatationBestCostTolerance?
+      let nodeSwap1: HybridNode<L> = null;
+      let nodeSwap2: HybridNode<L> = null;
+      let bestCost = 0;
 
       if (right.object === undefined) { // is not leaf
         const RL = right.left;
@@ -374,12 +448,10 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
         }
       }
 
-      if (nodeSwap1) {
+      if (nodeSwap1 !== null) {
         this.swap(nodeSwap1, nodeSwap2);
       }
-
-      node = node.parent;
-    } while (node);
+    }
   }
 
   // this works only for rotation
@@ -397,7 +469,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     A.parent = parentB;
     B.parent = parentA;
 
-    unionBox(parentB.left.box, parentB.right.box, parentBox, this._margin);
+    unionBox(parentB.left.box, parentB.right.box, parentBox); // capire
     parentB.area = areaBox(parentBox);
   }
 

@@ -5,11 +5,12 @@ export const WebGPUCoordinateSystem = 1;
 export type CoordinateSystem = typeof WebGLCoordinateSystem | typeof WebGPUCoordinateSystem;
 
 export class Frustum {
-  public array = new Float64Array(24); // [plane normal X, plane normal Y, plane normal Z, plane constant, ...]
+  public array: FloatArray; // [plane normal X, plane normal Y, plane normal Z, plane constant, ...]
   public coordinateSystem: CoordinateSystem;
 
-  constructor(coordinateSystem: CoordinateSystem) {
+  constructor(highPrecision: boolean, coordinateSystem: CoordinateSystem) {
     this.coordinateSystem = coordinateSystem;
+    this.array = highPrecision ? new Float64Array(24) : new Float32Array(24);
   }
 
   public setFromProjectionMatrix(mat: FloatArray | number[]): this {
