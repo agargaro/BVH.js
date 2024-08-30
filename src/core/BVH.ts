@@ -4,6 +4,8 @@ import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frust
 import { intersectRayBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
 
+export type onFrustumIntersectedCallback<N, L> = (node: BVHNode<N, L>, frustum: Frustum, mask: number) => void;
+
 export class BVH<N, L> {
   public builder: IBVHBuilder<N, L>;
   public frustum: Frustum;
@@ -25,16 +27,16 @@ export class BVH<N, L> {
     this.builder.createFromArray(objects, boxes, onLeafCreation);
   }
 
-  public insert(object: L, box: FloatArray): BVHNode<N, L> {
-    return this.builder.insert(object, box);
+  public insert(object: L, box: FloatArray, margin: number): BVHNode<N, L> {
+    return this.builder.insert(object, box, margin);
   }
 
-  public insertRange(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
-    this.builder.insertRange(objects, boxes, onLeafCreation);
+  public insertRange(objects: L[], boxes: FloatArray[], margins?: number | FloatArray | number[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
+    this.builder.insertRange(objects, boxes, margins, onLeafCreation);
   }
 
-  public move(node: BVHNode<N, L>): void {
-    this.builder.move(node);
+  public move(node: BVHNode<N, L>, margin: number): void {
+    this.builder.move(node, margin);
   }
 
   public delete(node: BVHNode<N, L>): BVHNode<N, L> {
@@ -93,7 +95,7 @@ export class BVH<N, L> {
     }
   }
 
-  public frustumCulling(projectionMatrix: FloatArray | number[], onFrustumIntersected: (leaf: L) => void): void {
+  public frustumCulling(projectionMatrix: FloatArray | number[], onFrustumIntersected: onFrustumIntersectedCallback<N, L>): void {
     const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
 
     traverseVisibility(this.root, 0b111111);
@@ -110,7 +112,7 @@ export class BVH<N, L> {
 
       // 1+ = intersect
       if (node.object !== undefined) {
-        onFrustumIntersected(node.object);
+        onFrustumIntersected(node, frustum, mask);
         return;
       }
 
@@ -120,7 +122,7 @@ export class BVH<N, L> {
 
     function showAll(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-        onFrustumIntersected(node.object);
+        onFrustumIntersected(node, frustum, 0);
         return;
       }
 

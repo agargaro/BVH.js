@@ -92,4 +92,29 @@ export class Frustum {
 
     return mask;
   }
+
+  // use it only in 'onFrustumIntersectedCallback' callback.
+  public isIntersected(box: FloatArray, mask: number, margin: number): boolean {
+    if (mask === 0 || margin === 0) return true;
+
+    const array = this.array;
+
+    for (let i = 0; i < 6; i++) {
+      if ((mask & (0b100000 >> i)) === 0) continue; // if bit i is 0
+
+      const offset = i * 4;
+      const px = array[offset + 0];
+      const py = array[offset + 1];
+      const pz = array[offset + 2];
+      const planeConstant = array[offset + 3];
+
+      const xMin = px > 0 ? box[1] - margin : box[0] + margin;
+      const yMin = py > 0 ? box[3] - margin : box[2] + margin;
+      const zMin = pz > 0 ? box[5] - margin : box[4] + margin;
+
+      if ((px * xMin) + (py * yMin) + (pz * zMin) < -planeConstant) return false;
+    }
+
+    return true;
+  }
 }

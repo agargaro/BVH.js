@@ -9,13 +9,47 @@ export function unionBox(A: FloatArray, B: FloatArray, target: FloatArray): void
   target[5] = A[5] < B[5] ? B[5] : A[5];
 }
 
-export function unionBoxMargin(A: FloatArray, B: FloatArray, target: FloatArray, margin: number): void {
-  target[0] = (A[0] > B[0] ? B[0] : A[0]) - margin;
-  target[1] = (A[1] < B[1] ? B[1] : A[1]) + margin;
-  target[2] = (A[2] > B[2] ? B[2] : A[2]) - margin;
-  target[3] = (A[3] < B[3] ? B[3] : A[3]) + margin;
-  target[4] = (A[4] > B[4] ? B[4] : A[4]) - margin;
-  target[5] = (A[5] < B[5] ? B[5] : A[5]) + margin;
+export function unionBoxChanged(A: FloatArray, B: FloatArray, target: FloatArray): boolean {
+  let changed = false;
+  
+  const t0 = A[0] > B[0] ? B[0] : A[0];
+  const t1 = A[1] < B[1] ? B[1] : A[1];
+  const t2 = A[2] > B[2] ? B[2] : A[2];
+  const t3 = A[3] < B[3] ? B[3] : A[3];
+  const t4 = A[4] > B[4] ? B[4] : A[4];
+  const t5 = A[5] < B[5] ? B[5] : A[5];
+
+  if (target[0] > t0) {
+    target[0] = t0;
+    changed = true;
+  }
+
+  if (target[1] < t1) {
+    target[1] = t1;
+    changed = true;
+  }
+
+  if (target[2] > t2) {
+    target[2] = t2;
+    changed = true;
+  }
+
+  if (target[3] < t3) {
+    target[3] = t3;
+    changed = true;
+  }
+
+  if (target[4] > t4) {
+    target[4] = t4;
+    changed = true;
+  }
+
+  if (target[5] < t5) {
+    target[5] = t5;
+    changed = true;
+  }
+
+  return changed;
 }
 
 export function isBoxInsideBox(innerBox: FloatArray, outerBox: FloatArray): boolean {
@@ -28,15 +62,15 @@ export function isBoxInsideBox(innerBox: FloatArray, outerBox: FloatArray): bool
   return true;
 }
 
-export function expandBox(A: FloatArray, target: FloatArray, margin: number): boolean {
+export function expandBox(A: FloatArray, target: FloatArray): boolean {
   let expanded = false;
 
-  const a0 = A[0] - margin; // TODO capire se serve
-  const a1 = A[1] + margin;
-  const a2 = A[2] - margin;
-  const a3 = A[3] + margin;
-  const a4 = A[4] - margin;
-  const a5 = A[5] + margin;
+  const a0 = A[0]; // TODO capire se serve
+  const a1 = A[1];
+  const a2 = A[2];
+  const a3 = A[3];
+  const a4 = A[4];
+  const a5 = A[5];
 
   if (target[0] > a0) {
     target[0] = a0;
@@ -69,6 +103,15 @@ export function expandBox(A: FloatArray, target: FloatArray, margin: number): bo
   }
 
   return expanded;
+}
+
+export function expandBoxByMargin(target: FloatArray, margin: number): void {
+  target[0] -= margin;
+  target[1] += margin;
+  target[2] -= margin;
+  target[3] += margin;
+  target[4] -= margin;
+  target[5] += margin;
 }
 
 export function areaBox(box: FloatArray): number {
