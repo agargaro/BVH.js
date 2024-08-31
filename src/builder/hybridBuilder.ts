@@ -14,6 +14,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
   public readonly highPrecision: boolean;
   protected _sortedList = new SortedListDesc();
   protected _typeArray: FloatArrayType;
+  protected count = 0;
 
   constructor(highPrecision = false) {
     this.highPrecision = highPrecision;
@@ -155,6 +156,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     if (this.root === null) this.root = leaf;
     else this.insertLeaf(leaf);
 
+    this.count++;
     return leaf;
   }
 
@@ -170,8 +172,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     }
   }
 
-  
-  //TODO dare precedenza ai nodi vicini?
+
   //update node.box before calling this function
   public move(node: HybridNode<L>, margin: number): void {
     if (!node.parent || isBoxInsideBox(node.box, node.parent.box)) {
@@ -183,6 +184,7 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
 
     const deletedNode = this.delete(node);
     this.insertLeaf(node, deletedNode);
+    this.count++;
   }
 
   public delete(node: HybridNode<L>): HybridNode<L> {
@@ -210,6 +212,8 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     // parent.parent = null; parent.left = null; parent.right = null; // GC should work anyway
 
     this.refit(parent2); // i don't think we need rotation here
+
+    this.count--;
 
     return parent;
   }
@@ -254,11 +258,16 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     let bestNode = root;
     let bestCost = areaFromTwoBoxes(leafBox, root.box);
     const leafArea = areaBox(leafBox);
-    const sortedList = this._sortedList;
-    const sortedListMaxCount = 16;
 
     if (root.object !== undefined) return root;
 
+    if (this.count < 50000) {
+      _findBestSibling(root, bestCost - areaBox(root.box));
+      return bestNode;
+    }
+
+    const sortedList = this._sortedList;
+    const sortedListMaxCount = Math.log2(this.count * 4) << 1;
     _findBestSiblingSorted();
 
     return bestNode;
