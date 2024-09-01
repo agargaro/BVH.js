@@ -136,15 +136,15 @@ export class BVH<N, L> {
     }
   }
 
-  public closestToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): L {
+  public closestPointToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): L {
     let bestDistance = Infinity;
     let bestLeaf: L = null;
 
-    _closestToPoint(this.root);
+    _closestPointToPoint(this.root);
 
     return bestLeaf;
 
-    function _closestToPoint(node: BVHNode<N, L>): void {
+    function _closestPointToPoint(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
         bestDistance = onClosestDistance ? onClosestDistance(node.object) : closestDistanceSquaredPointToBox(node.box, point);
         bestLeaf = node.object;
@@ -158,15 +158,15 @@ export class BVH<N, L> {
 
         if (leftDistance < bestDistance) {
 
-          _closestToPoint(node.left);
-          if (rightDistance < bestDistance) _closestToPoint(node.right);
+          _closestPointToPoint(node.left);
+          if (rightDistance < bestDistance) _closestPointToPoint(node.right);
 
         }
 
       } else if (rightDistance < bestDistance) {
 
-        _closestToPoint(node.right);
-        if (leftDistance < bestDistance) _closestToPoint(node.left);
+        _closestPointToPoint(node.right);
+        if (leftDistance < bestDistance) _closestPointToPoint(node.left);
 
       }
     }
