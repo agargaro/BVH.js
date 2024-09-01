@@ -1,10 +1,12 @@
 import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
 import { closestDistanceSquaredPointToBox } from "../utils/boxUtils.js";
 import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
-import { intersectRayBox } from "../utils/intersectUtils.js";
+import { intersectBoxBox, intersectRayBox, intersectSphereBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
 
-export type onFrustumIntersectedCallback<N, L> = (node: BVHNode<N, L>, frustum: Frustum, mask: number) => void;
+export type onFrustumIntersectionCallback<N, L> = (node: BVHNode<N, L>, frustum: Frustum, mask: number) => void;
+export type onClosestDistanceCallback<L> = (obj: L) => number;
+export type onIntersectionCallback<L> = (obj: L) => boolean;
 
 export class BVH<N, L> {
   public builder: IBVHBuilder<N, L>;
@@ -95,13 +97,22 @@ export class BVH<N, L> {
     }
   }
 
-  public frustumCulling(projectionMatrix: FloatArray | number[], onFrustumIntersected: onFrustumIntersectedCallback<N, L>): void {
+  public frustumCulling(projectionMatrix: FloatArray | number[], onIntersection: onFrustumIntersectionCallback<N, L>): void {
     const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
 
-    traverseVisibility(this.root, 0b111111);
+    _frustumCulling(this.root, 0b111111);
 
-    function traverseVisibility(node: BVHNode<N, L>, mask: number): void {
-      mask = frustum.intesectsBoxMask(node.box, mask);
+    function _frustumCulling(node: BVHNode<N, L>, mask: number): void {
+      if (node.object !== undefined) {
+
+        if (frustum.isIntersected(node.box, mask)) {
+          onIntersection(node, frustum, mask);
+        }
+
+        return;
+      }
+
+      mask = frustum.intersectsBoxMask(node.box, mask);
 
       if (mask < 0) return; // -1 = out
 
@@ -110,19 +121,13 @@ export class BVH<N, L> {
         return;
       }
 
-      // 1+ = intersect
-      if (node.object !== undefined) {
-        onFrustumIntersected(node, frustum, mask);
-        return;
-      }
-
-      traverseVisibility(node.left, mask);
-      traverseVisibility(node.right, mask);
+      _frustumCulling(node.left, mask);
+      _frustumCulling(node.right, mask);
     }
 
     function showAll(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-        onFrustumIntersected(node, frustum, 0);
+        onIntersection(node, frustum, 0);
         return;
       }
 
@@ -131,7 +136,7 @@ export class BVH<N, L> {
     }
   }
 
-  public closestToPoint(point: FloatArray): L {
+  public closestToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): L {
     let bestDistance = Infinity;
     let bestLeaf: L = null;
 
@@ -141,11 +146,8 @@ export class BVH<N, L> {
 
     function _closestToPoint(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-        // TODO add callback 
-
-        bestDistance = closestDistanceSquaredPointToBox(node.box, point);
+        bestDistance = onClosestDistance ? onClosestDistance(node.object) : closestDistanceSquaredPointToBox(node.box, point);
         bestLeaf = node.object;
-
         return;
       }
 
@@ -167,6 +169,32 @@ export class BVH<N, L> {
         if (leftDistance < bestDistance) _closestToPoint(node.left);
 
       }
+    }
+  }
+
+  // provare approccio con priorità
+  public intersectsBox(box: FloatArray, onIntersection: onIntersectionCallback<L>): boolean {
+    return _intersectsBox(this.root);
+
+    function _intersectsBox(node: BVHNode<N, L>): boolean {
+      if (!intersectBoxBox(box, node.box)) return false;
+
+      if (node.object !== undefined) return onIntersection(node.object);
+
+      return _intersectsBox(node.left) || _intersectsBox(node.right);
+    }
+  }
+
+  // provare approccio con priorità
+  public intersectsSphere(center: FloatArray, radius: number, onIntersection: onIntersectionCallback<L>): boolean {
+    return _intersectsSphere(this.root);
+
+    function _intersectsSphere(node: BVHNode<N, L>): boolean {
+      if (!intersectSphereBox(center, radius, node.box)) return false;
+
+      if (node.object !== undefined) return onIntersection(node.object);
+
+      return _intersectsSphere(node.left) || _intersectsSphere(node.right);
     }
   }
 }
