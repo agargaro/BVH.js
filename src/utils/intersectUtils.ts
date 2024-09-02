@@ -1,5 +1,5 @@
 import { FloatArray } from "../core/BVHNode.js";
-import { closestDistanceSquaredPointToBox } from "./boxUtils.js";
+import { minDistanceSqPointToBox } from "./boxUtils.js";
 
 export function intersectRayBox(box: FloatArray, origins: FloatArray, dirsInv: FloatArray, signs: Uint8Array, near: number, far: number): boolean {
     // X axis
@@ -52,5 +52,5 @@ export function intersectBoxBox(A: FloatArray, B: FloatArray): boolean {
 }
 
 export function intersectSphereBox(center: FloatArray, radius: number, box: FloatArray): boolean {
-    return closestDistanceSquaredPointToBox(box, center) <= radius * radius;
+    return minDistanceSqPointToBox(box, center) <= radius * radius;
 }

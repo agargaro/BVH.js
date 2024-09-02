@@ -1,5 +1,5 @@
 import { BVHNode, FloatArray, FloatArrayType } from '../core/BVHNode.js';
-import { areaBox, areaFromTwoBoxes, expandBox, expandBoxByMargin, getLongestAxis, isBoxInsideBox, unionBox, unionBoxChanged } from '../utils/boxUtils.js';
+import { areaBox, areaFromTwoBoxes, isExpanded, expandBoxByMargin, getLongestAxis, isBoxInsideBox, unionBox, unionBoxChanged, expandBox } from '../utils/boxUtils.js';
 import { SortedListDesc } from '../utils/sortedListDesc.js';
 import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
@@ -391,7 +391,8 @@ export class HybridBuilder<L> implements IBVHBuilder<HybridNodeData<L>, L> {
     while (node = node.parent) {
       const nodeBox = node.box;
 
-      if (!expandBox(originalNodeBox, nodeBox)) return; // this avoid some rotations but is less expensive
+      // we can use 'expandBox(originalNodeBox, nodeBox);' here if we want to performs all rotation 
+      if (!isExpanded(originalNodeBox, nodeBox)) return; // this avoid some rotations but is less expensive
 
       const left = node.left;
       const right = node.right;

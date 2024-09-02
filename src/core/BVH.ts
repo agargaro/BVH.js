@@ -1,5 +1,5 @@
 import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
-import { closestDistanceSquaredPointToBox } from "../utils/boxUtils.js";
+import { minDistanceSqPointToBox } from "../utils/boxUtils.js";
 import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
 import { intersectBoxBox, intersectRayBox, intersectSphereBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
@@ -146,13 +146,13 @@ export class BVH<N, L> {
 
     function _closestPointToPoint(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-        bestDistance = onClosestDistance ? onClosestDistance(node.object) : closestDistanceSquaredPointToBox(node.box, point);
+        bestDistance = onClosestDistance ? onClosestDistance(node.object) : minDistanceSqPointToBox(node.box, point);
         bestLeaf = node.object;
         return;
       }
 
-      const leftDistance = closestDistanceSquaredPointToBox(node.left.box, point);
-      const rightDistance = closestDistanceSquaredPointToBox(node.right.box, point);
+      const leftDistance = minDistanceSqPointToBox(node.left.box, point);
+      const rightDistance = minDistanceSqPointToBox(node.right.box, point);
 
       if (leftDistance < rightDistance) {
 

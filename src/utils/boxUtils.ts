@@ -11,7 +11,7 @@ export function unionBox(A: FloatArray, B: FloatArray, target: FloatArray): void
 
 export function unionBoxChanged(A: FloatArray, B: FloatArray, target: FloatArray): boolean {
   let changed = false;
-  
+
   const t0 = A[0] > B[0] ? B[0] : A[0];
   const t1 = A[1] < B[1] ? B[1] : A[1];
   const t2 = A[2] > B[2] ? B[2] : A[2];
@@ -62,47 +62,49 @@ export function isBoxInsideBox(innerBox: FloatArray, outerBox: FloatArray): bool
   return true;
 }
 
-export function expandBox(A: FloatArray, target: FloatArray): boolean {
+export function isExpanded(A: FloatArray, target: FloatArray): boolean {
   let expanded = false;
 
-  const a0 = A[0]; // TODO capire se serve
-  const a1 = A[1];
-  const a2 = A[2];
-  const a3 = A[3];
-  const a4 = A[4];
-  const a5 = A[5];
-
-  if (target[0] > a0) {
-    target[0] = a0;
+  if (target[0] > A[0]) {
+    target[0] = A[0];
     expanded = true;
   }
 
-  if (target[1] < a1) {
-    target[1] = a1;
+  if (target[1] < A[1]) {
+    target[1] = A[1];
     expanded = true;
   }
 
-  if (target[2] > a2) {
-    target[2] = a2;
+  if (target[2] > A[2]) {
+    target[2] = A[2];
     expanded = true;
   }
 
-  if (target[3] < a3) {
-    target[3] = a3;
+  if (target[3] < A[3]) {
+    target[3] = A[3];
     expanded = true;
   }
 
-  if (target[4] > a4) {
-    target[4] = a4;
+  if (target[4] > A[4]) {
+    target[4] = A[4];
     expanded = true;
   }
 
-  if (target[5] < a5) {
-    target[5] = a5;
+  if (target[5] < A[5]) {
+    target[5] = A[5];
     expanded = true;
   }
 
   return expanded;
+}
+
+export function expandBox(A: FloatArray, target: FloatArray): void {
+  if (target[0] > A[0]) target[0] = A[0];
+  if (target[1] < A[1]) target[1] = A[1];
+  if (target[2] > A[2]) target[2] = A[2];
+  if (target[3] < A[3]) target[3] = A[3];
+  if (target[4] > A[4]) target[4] = A[4];
+  if (target[5] < A[5]) target[5] = A[5];
 }
 
 export function expandBoxByMargin(target: FloatArray, margin: number): void {
@@ -146,24 +148,80 @@ export function getLongestAxis(box: FloatArray): number {
   return ySize > zSize ? 1 : 2;
 }
 
-export function closestDistanceSquaredPointToBox(box: FloatArray, point: FloatArray) {
+export function minDistanceSqPointToBox(box: FloatArray, point: FloatArray): number {
   const xMin = box[0] - point[0];
   const xMax = point[0] - box[1];
-  const dx = xMin > xMax ? (xMin > 0 ? xMin : 0) : (xMax > 0 ? xMax : 0);
+  let dx = xMin > xMax ? xMin : xMax;
+  if (dx < 0) dx = 0;
 
   const yMin = box[2] - point[1];
   const yMax = point[1] - box[3];
-  const dy = yMin > yMax ? (yMin > 0 ? yMin : 0) : (yMax > 0 ? yMax : 0);
+  let dy = yMin > yMax ? yMin : yMax;
+  if (dy < 0) dy = 0;
 
   const zMin = box[4] - point[2];
   const zMax = point[2] - box[5];
-  const dz = zMin > zMax ? (zMin > 0 ? zMin : 0) : (zMax > 0 ? zMax : 0);
-
-  // TODO refactor
+  let dz = zMin > zMax ? zMin : zMax;
+  if (dz < 0) dz = 0;
 
   return dx * dx + dy * dy + dz * dz;
 }
 
-export function closestDistancePointToBox(box: FloatArray, point: FloatArray) {
-  return Math.sqrt(closestDistanceSquaredPointToBox(box, point));
+export function minDistancePointToBox(box: FloatArray, point: FloatArray): number {
+  return Math.sqrt(minDistanceSqPointToBox(box, point));
+}
+
+export function minMaxDistanceSqPointToBox(box: FloatArray, point: FloatArray): { min: number, max: number } {
+  let dXmin, dXmax, dYmin, dYmax, dZmin, dZmax;
+  
+  const xMin = box[0] - point[0];
+  const xMax = point[0] - box[1];
+
+  if (xMin > xMax) {
+    dXmin = xMin;
+    dXmax = xMax;
+  } else {
+    dXmin = xMax;
+    dXmax = xMin;
+  }
+
+  if (dXmin < 0) dXmin = 0;
+
+  const yMin = box[2] - point[1];
+  const yMax = point[1] - box[3];
+
+  if (yMin > yMax) {
+    dYmin = yMin;
+    dYmax = yMax;
+  } else {
+    dYmin = yMax;
+    dYmax = yMin;
+  }
+
+  if (dYmin < 0) dYmin = 0;
+
+  const zMin = box[4] - point[2];
+  const zMax = point[2] - box[5];
+
+  if (zMin > zMax) {
+    dZmin = zMin;
+    dZmax = zMax;
+  } else {
+    dZmin = zMax;
+    dZmax = zMin;
+  }
+
+  if (dZmin < 0) dZmin = 0;
+
+  return {
+    min: dXmin * dXmin + dYmin * dYmin + dZmin * dZmin,
+    max: dXmax * dXmax + dYmax * dYmax + dZmax * dZmax,
+  };
+}
+
+export function minMaxDistancePointToBox(box: FloatArray, point: FloatArray): { min: number, max: number } {
+  const result = minMaxDistanceSqPointToBox(box, point);
+  result.min = Math.sqrt(result.min);
+  result.max = Math.sqrt(result.max);
+  return result;
 }
