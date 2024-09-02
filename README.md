@@ -36,3 +36,8 @@ checkNodeCollision  <br>
 
 
 experiment rotation with N leaves and max depth  <br>
+
+## References
+
+- [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh)
+- [ErinCatto_DynamicBVH](https://box2d.org/files/ErinCatto_DynamicBVH_Full.pdf)
