@@ -3,6 +3,7 @@ export * from "./builder/IBVHBuilder.js";
 export * from "./core/BVH.js";
 export * from "./core/BVHNode.js";
 export * from "./utils/boxUtils.js";
+export * from "./utils/conversionUtils.js";
 export * from "./utils/frustum.js";
 export * from "./utils/inspector.js";
 export * from "./utils/intersectUtils.js";

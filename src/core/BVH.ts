@@ -4,9 +4,11 @@ import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frust
 import { intersectBoxBox, intersectRayBox, intersectSphereBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
 
-export type onFrustumIntersectionCallback<N, L> = (node: BVHNode<N, L>, frustum: Frustum, mask: number) => void;
-export type onClosestDistanceCallback<L> = (obj: L) => number;
+export type onTraverseCallback<N, L> = (node: BVHNode<N, L>, depth: number) => boolean;
 export type onIntersectionCallback<L> = (obj: L) => boolean;
+export type onClosestDistanceCallback<L> = (obj: L) => number;
+export type onIntersectionRayCallback<L> = (obj: L) => void;
+export type onFrustumIntersectionCallback<N, L> = (node: BVHNode<N, L>, frustum?: Frustum, mask?: number) => void;
 
 export class BVH<N, L> {
   public builder: IBVHBuilder<N, L>;
@@ -49,7 +51,7 @@ export class BVH<N, L> {
     this.builder.clear();
   }
 
-  public traverse(callback: (node: BVHNode<N, L>, depth: number) => boolean): void {
+  public traverse(callback: onTraverseCallback<N, L>): void {
     _traverse(this.root, 0);
 
     function _traverse(node: BVHNode<N, L>, depth: number): void {
@@ -68,7 +70,79 @@ export class BVH<N, L> {
     }
   }
 
-  public intersectRay(dir: FloatArray, origin: FloatArray, near = 0, far = Infinity, result: L[] = []): L[] {
+  public intersectsRay(dir: FloatArray, origin: FloatArray, onIntersection: onIntersectionCallback<L>, near = 0, far = Infinity): boolean {
+    const dirInv = this._dirInv;
+    const sign = this._sign;
+
+    //TODO provare a non passare array
+
+    dirInv[0] = 1 / dir[0];
+    dirInv[1] = 1 / dir[1];
+    dirInv[2] = 1 / dir[2];
+
+    sign[0] = dirInv[0] < 0 ? 1 : 0;
+    sign[1] = dirInv[1] < 0 ? 1 : 0;
+    sign[2] = dirInv[2] < 0 ? 1 : 0;
+
+    return _intersectsRay(this.root);
+
+    function _intersectsRay(node: BVHNode<N, L>): boolean {
+      if (!intersectRayBox(node.box, origin, dirInv, sign, near, far)) return false;
+
+      if (node.object !== undefined) return onIntersection(node.object);
+
+      return _intersectsRay(node.left) || _intersectsRay(node.right);
+    }
+  }
+
+  public intersectsBox(box: FloatArray, onIntersection: onIntersectionCallback<L>): boolean {
+    return _intersectsBox(this.root);
+
+    function _intersectsBox(node: BVHNode<N, L>): boolean {
+      if (!intersectBoxBox(box, node.box)) return false;
+
+      if (node.object !== undefined) return onIntersection(node.object);
+
+      return _intersectsBox(node.left) || _intersectsBox(node.right);
+    }
+  }
+
+  public intersectsSphere(center: FloatArray, radius: number, onIntersection: onIntersectionCallback<L>): boolean {
+    return _intersectsSphere(this.root);
+
+    function _intersectsSphere(node: BVHNode<N, L>): boolean {
+      if (!intersectSphereBox(center, radius, node.box)) return false;
+
+      if (node.object !== undefined) return onIntersection(node.object);
+
+      return _intersectsSphere(node.left) || _intersectsSphere(node.right);
+    }
+  }
+
+  public isNodeIntersected(node: BVHNode<N, L>, onIntersection: onIntersectionCallback<L>): boolean {
+    const nodeBox = node.box;
+    let parent;
+
+    while (parent = node.parent) {
+      const oppositeNode = parent.left === node ? parent.right : parent.left;
+
+      if (_isNodeIntersected(oppositeNode)) return true;
+
+      node = parent;
+    }
+
+    return false;
+
+    function _isNodeIntersected(node: BVHNode<N, L>): boolean {
+      if (!intersectBoxBox(nodeBox, node.box)) return false;
+
+      if (node.object !== undefined) return onIntersection(node.object);
+
+      return _isNodeIntersected(node.left) || _isNodeIntersected(node.right);
+    }
+  }
+
+  public rayIntersections(dir: FloatArray, origin: FloatArray, onIntersection: onIntersectionRayCallback<L>, near = 0, far = Infinity): void {
     const dirInv = this._dirInv;
     const sign = this._sign;
 
@@ -80,20 +154,18 @@ export class BVH<N, L> {
     sign[1] = dirInv[1] < 0 ? 1 : 0;
     sign[2] = dirInv[2] < 0 ? 1 : 0;
 
-    _intersectRay(this.root);
+    _rayIntersections(this.root);
 
-    return result;
-
-    function _intersectRay(node: BVHNode<N, L>): void {
+    function _rayIntersections(node: BVHNode<N, L>): void {
       if (!intersectRayBox(node.box, origin, dirInv, sign, near, far)) return;
 
       if (node.object !== undefined) {
-        result.push(node.object);
+        onIntersection(node.object);
         return;
       }
 
-      _intersectRay(node.left);
-      _intersectRay(node.right);
+      _rayIntersections(node.left);
+      _rayIntersections(node.right);
     }
   }
 
@@ -117,7 +189,8 @@ export class BVH<N, L> {
       if (mask < 0) return; // -1 = out
 
       if (mask === 0) { // 0 = in
-        showAll(node);
+        showAll(node.left);
+        showAll(node.right);
         return;
       }
 
@@ -136,18 +209,24 @@ export class BVH<N, L> {
     }
   }
 
-  public closestPointToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): L {
+  // onClosestDistance callback should return SQUARED distance 
+  public closestPointToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): number {
     let bestDistance = Infinity;
-    let bestLeaf: L = null;
 
     _closestPointToPoint(this.root);
 
-    return bestLeaf;
+    return Math.sqrt(bestDistance);
 
     function _closestPointToPoint(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-        bestDistance = onClosestDistance ? onClosestDistance(node.object) : minDistanceSqPointToBox(node.box, point);
-        bestLeaf = node.object;
+
+        if (onClosestDistance) {
+          let distance = onClosestDistance(node.object) ?? minDistanceSqPointToBox(node.box, point);
+          if (distance < bestDistance) bestDistance = distance;
+        } else {
+          bestDistance = minDistanceSqPointToBox(node.box, point); // this was already calculated actually
+        }
+
         return;
       }
 
@@ -169,32 +248,6 @@ export class BVH<N, L> {
         if (leftDistance < bestDistance) _closestPointToPoint(node.left);
 
       }
-    }
-  }
-
-  // provare approccio con priorità
-  public intersectsBox(box: FloatArray, onIntersection: onIntersectionCallback<L>): boolean {
-    return _intersectsBox(this.root);
-
-    function _intersectsBox(node: BVHNode<N, L>): boolean {
-      if (!intersectBoxBox(box, node.box)) return false;
-
-      if (node.object !== undefined) return onIntersection(node.object);
-
-      return _intersectsBox(node.left) || _intersectsBox(node.right);
-    }
-  }
-
-  // provare approccio con priorità
-  public intersectsSphere(center: FloatArray, radius: number, onIntersection: onIntersectionCallback<L>): boolean {
-    return _intersectsSphere(this.root);
-
-    function _intersectsSphere(node: BVHNode<N, L>): boolean {
-      if (!intersectSphereBox(center, radius, node.box)) return false;
-
-      if (node.object !== undefined) return onIntersection(node.object);
-
-      return _intersectsSphere(node.left) || _intersectsSphere(node.right);
     }
   }
 }

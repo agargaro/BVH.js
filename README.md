@@ -18,12 +18,13 @@ delete  <br>
 clear  <br>
 
 traverse  <br>
-intersectRay  <br>
+rayIntersections  <br>
 frustumCulling  <br>
 closestPointToPoint  <br>
 intersectsBox <br>
 intersectsSphere <br>
-
+intersectsRay <br>
+isNodeIntersected <br>
 
 ## TODO:
 
@@ -32,8 +33,7 @@ intersectsRayFirst  <br>
 intersectsBVH  <br>
 closestPointToGeometry  <br>
 getAllCollision  <br>
-checkNodeCollision  <br>
-
+getNearestObject <br>
 
 experiment rotation with N leaves and max depth  <br>
 
