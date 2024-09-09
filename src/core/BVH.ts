@@ -1,5 +1,5 @@
 import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
-import { minDistanceSqPointToBox } from "../utils/boxUtils.js";
+import { minDistanceSqPointToBox, minMaxDistanceSqPointToBox } from "../utils/boxUtils.js";
 import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
 import { intersectBoxBox, intersectRayBox, intersectSphereBox } from "../utils/intersectUtils.js";
 import { BVHNode, FloatArray } from "./BVHNode.js";
@@ -9,6 +9,7 @@ export type onIntersectionCallback<L> = (obj: L) => boolean;
 export type onClosestDistanceCallback<L> = (obj: L) => number;
 export type onIntersectionRayCallback<L> = (obj: L) => void;
 export type onFrustumIntersectionCallback<N, L> = (node: BVHNode<N, L>, frustum?: Frustum, mask?: number) => void;
+export type onFrustumIntersectionLODCallback<N, L> = (node: BVHNode<N, L>, level: number, frustum?: Frustum, mask?: number) => void;
 
 export class BVH<N, L> {
   public builder: IBVHBuilder<N, L>;
@@ -206,6 +207,69 @@ export class BVH<N, L> {
 
       showAll(node.left);
       showAll(node.right);
+    }
+  }
+
+  public frustumCullingLOD(projectionMatrix: FloatArray | number[], cameraPosition: FloatArray, levels: FloatArray, onIntersection: onFrustumIntersectionLODCallback<N, L>): void {
+    const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
+
+    _frustumCullingLOD(this.root, 0b111111, null);
+
+    function _frustumCullingLOD(node: BVHNode<N, L>, mask: number, level: number): void {
+      const nodeBox = node.box;
+
+      if (level === null) { // TODO trying use mask here?
+        level = getLevel(nodeBox);
+      }
+
+      if (node.object !== undefined) {
+
+        if (frustum.isIntersected(nodeBox, mask)) {
+          onIntersection(node, level, frustum, mask);
+        }
+
+        return;
+      }
+
+      mask = frustum.intersectsBoxMask(nodeBox, mask);
+
+      if (mask < 0) return; // -1 = out
+
+      if (mask === 0) { // 0 = in
+        showAll(node.left, level);
+        showAll(node.right, level);
+        return;
+      }
+
+      _frustumCullingLOD(node.left, mask, level);
+      _frustumCullingLOD(node.right, mask, level);
+    }
+
+    function showAll(node: BVHNode<N, L>, level: number): void {
+      if (level === null) {
+        level = getLevel(node.box);
+      }
+
+      if (node.object !== undefined) {
+        onIntersection(node, level, frustum, 0);
+        return;
+      }
+
+      showAll(node.left, level);
+      showAll(node.right, level);
+    }
+
+    function getLevel(nodeBox: FloatArray): number {
+      const { min, max } = minMaxDistanceSqPointToBox(nodeBox, cameraPosition);
+
+      for (let i = levels.length - 1; i > 0; i--) {
+        // if we want to add hysteresis -> const levelDistance = level - (level * hysteresis);
+        if (max >= levels[i]) {
+          return min >= levels[i] ? i : null;
+        }
+      }
+
+      return 0;
     }
   }
 
