@@ -17,8 +17,7 @@ export class SortedListPriority {
             if (cost <= array[i].inheritedCost) break;
         }
 
-        i++;
-        if (i > array.length - 6) array.splice(i, 0, node);
+        if (i > array.length - 7) array.splice(i + 1, 0, node); // if in last 6 place, add it do the list
     }
 
     public pop() {
