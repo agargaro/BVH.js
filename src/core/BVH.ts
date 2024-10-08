@@ -28,8 +28,8 @@ export class BVH<N, L> {
     this._dirInv = highPrecision ? new Float64Array(3) : new Float32Array(3);
   }
 
-  public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
-    this.builder.createFromArray(objects, boxes, onLeafCreation);
+  public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>, margin?: number): void {
+    this.builder.createFromArray(objects, boxes, onLeafCreation, margin);
   }
 
   public insert(object: L, box: FloatArray, margin: number): BVHNode<N, L> {

@@ -1,15 +1,12 @@
 import { BVHNode, FloatArray, FloatArrayType } from '../core/BVHNode.js';
 import { areaBox, areaFromTwoBoxes, expandBoxByMargin, getLongestAxis, isBoxInsideBox, isExpanded, unionBox, unionBoxChanged } from '../utils/boxUtils.js';
-import { SortedListDesc } from '../utils/sortedListDesc.js';
+import { SortedListPriority } from '../utils/sortedListPriority.js';
 import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
-
-// TODO: make test per controllare che tutto sia gerarchico (i bbox)
-// TODO: test incrementale
 
 export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
   public root: BVHNode<N, L> = null;
   public readonly highPrecision: boolean;
-  protected _sortedList = new SortedListDesc();
+  protected _sortedList = new SortedListPriority();
   protected _typeArray: FloatArrayType;
   protected count = 0;
 
@@ -18,7 +15,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
     this._typeArray = highPrecision ? Float64Array : Float32Array;
   }
 
-  public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
+  public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>, margin = 0): void {
     const maxCount = boxes.length;
     const typeArray = this._typeArray;
     if (typeArray !== (boxes[0].BYTES_PER_ELEMENT === 4 ? Float32Array : Float64Array)) console.warn("Different precision.");
@@ -31,6 +28,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
     function buildNode(offset: number, count: number, parent: BVHNode<N, L>): BVHNode<N, L> {
       if (count === 1) {
         const box = boxes[offset];
+        if (margin > 0) expandBoxByMargin(box, margin);
         const node = { box, object: objects[offset], parent } as BVHNode<N, L>;
         if (onLeafCreation) onLeafCreation(node);
         return node;
@@ -102,10 +100,18 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
         if (centroid[5] < zCenter) centroid[5] = zCenter;
       }
 
+      box[0] -= margin;
+      box[1] += margin;
+      box[2] -= margin;
+      box[3] += margin;
+      box[4] -= margin;
+      box[5] += margin;
+
       return box;
     }
 
-    function updateSplitData(box?: FloatArray, offset?: number, count?: number): void {
+    // function updateSplitData(box?: FloatArray, offset?: number, count?: number): void { TODO
+    function updateSplitData(): void {
       axis = getLongestAxis(centroid) * 2; // or we can get average
       position = (centroid[axis] + centroid[axis + 1]) * 0.5;
     }
@@ -258,87 +264,25 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
 
     if (root.object !== undefined) return root;
 
-    if (this.count < 50000) {
-      _findBestSibling(root, bestCost - areaBox(root.box));
-      return bestNode;
-    }
-
     const sortedList = this._sortedList;
-    const sortedListMaxCount = Math.log2(this.count * 4) << 1;
-    _findBestSiblingSorted();
+    sortedList.clear();
+    let nodeObj = { node: root, inheritedCost: bestCost - areaBox(root.box) };
 
-    return bestNode;
+    do {
+      const { node, inheritedCost } = nodeObj;
 
-    function _findBestSiblingSorted(): void {
-      sortedList.clear();
-      let count = 0;
-      let nodeObj = { node: root, inheritedCost: bestCost - areaBox(root.box) };
+      if (leafArea + inheritedCost >= bestCost) break;
 
-      do {
-        const { node, inheritedCost } = nodeObj;
-
-        if (leafArea + inheritedCost >= bestCost) return;
-
-        if (count >= sortedListMaxCount) {
-          _findBestSibling(node, inheritedCost);
-          continue;
-        }
-
-        count++;
-
-        const nodeL = node.left;
-        const nodeR = node.right;
-
-        const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
-        const currentCostL = directCostL + inheritedCost;
-        const inheritedCostL = inheritedCost + directCostL - areaBox(nodeL.box);
-
-        const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
-        const currentCostR = directCostR + inheritedCost;
-        const inheritedCostR = inheritedCost + directCostR - areaBox(nodeR.box);
-
-        if (currentCostL > currentCostR) {
-          if (bestCost > currentCostR) {
-            bestNode = nodeR;
-            bestCost = currentCostR;
-          }
-        } else if (bestCost > currentCostL) {
-          bestNode = nodeL;
-          bestCost = currentCostL;
-        }
-
-        if (inheritedCostR > inheritedCostL) {
-
-          if (leafArea + inheritedCostL >= bestCost) continue;
-          if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
-
-          if (leafArea + inheritedCostR >= bestCost) continue;
-          if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
-
-        } else {
-
-          if (leafArea + inheritedCostR >= bestCost) continue;
-          if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
-
-          if (leafArea + inheritedCostL >= bestCost) continue;
-          if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
-
-        }
-
-      } while (nodeObj = sortedList.pop());
-    }
-
-    function _findBestSibling(node: BVHNode<N, L>, inheritedCost: number): void {
       const nodeL = node.left;
       const nodeR = node.right;
 
       const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
       const currentCostL = directCostL + inheritedCost;
-      const inheritedCostL = inheritedCost + directCostL - areaBox(nodeL.box);
+      const inheritedCostL = currentCostL - areaBox(nodeL.box);
 
       const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
       const currentCostR = directCostR + inheritedCost;
-      const inheritedCostR = inheritedCost + directCostR - areaBox(nodeR.box);
+      const inheritedCostR = currentCostR - areaBox(nodeR.box);
 
       if (currentCostL > currentCostR) {
         if (bestCost > currentCostR) {
@@ -352,22 +296,25 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
 
       if (inheritedCostR > inheritedCostL) {
 
-        if (leafArea + inheritedCostL >= bestCost) return;
-        if (nodeL.object === undefined) _findBestSibling(nodeL, inheritedCostL);
+        if (leafArea + inheritedCostL >= bestCost) continue;
+        if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
 
-        if (leafArea + inheritedCostR >= bestCost) return;
-        if (nodeR.object === undefined) _findBestSibling(nodeR, inheritedCostR);
+        if (leafArea + inheritedCostR >= bestCost) continue;
+        if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
 
       } else {
 
-        if (leafArea + inheritedCostR >= bestCost) return;
-        if (nodeR.object === undefined) _findBestSibling(nodeR, inheritedCostR);
+        if (leafArea + inheritedCostR >= bestCost) continue;
+        if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
 
-        if (leafArea + inheritedCostL >= bestCost) return;
-        if (nodeL.object === undefined) _findBestSibling(nodeL, inheritedCostL);
+        if (leafArea + inheritedCostL >= bestCost) continue;
+        if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
 
       }
-    }
+
+    } while (nodeObj = sortedList.pop());
+
+    return bestNode;
   }
 
   protected refit(node: BVHNode<N, L>): void {
