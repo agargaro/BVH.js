@@ -1,6 +1,6 @@
 {
   "name": "bvh.js",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "BVH implementation",
   "author": "Andrea Gargaro <devgargaro@gmail.com>",
   "license": "MIT",
