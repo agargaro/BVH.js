@@ -8,3 +8,4 @@ export * from "./utils/frustum.js";
 export * from "./utils/inspector.js";
 export * from "./utils/intersectUtils.js";
 export * from "./utils/sortedListDesc.js";
+export * from "./utils/sortedListPriority.js";
