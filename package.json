@@ -1,15 +1,21 @@
 {
   "name": "bvh.js",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "BVH implementation",
   "author": "Andrea Gargaro <devgargaro@gmail.com>",
   "license": "MIT",
   "type": "module",
   "module": "index.js",
-  "main": "index.umd.cjs",
+  "main": "index.cjs",
   "types": "index.d.ts",
-  "repository": "https://github.com/agargaro/bvh.js",
   "homepage": "https://github.com/agargaro/bvh.js#readme",
+  "repository": "https://github.com/agargaro/bvh.js",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.cjs"
+    }
+  },
   "scripts": {
     "start": "vite",
     "build": "vite build",

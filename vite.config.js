@@ -10,7 +10,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'bvh_js',
       fileName: 'index',
-      formats: ['es', 'umd'],
+      formats: ['es', 'cjs'],
     },
   },
   plugins: [
