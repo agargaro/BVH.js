@@ -124,7 +124,7 @@ export class BVH<N, L> {
     const nodeBox = node.box;
     let parent;
 
-    while (parent = node.parent) {
+    while ((parent = node.parent)) {
       const oppositeNode = parent.left === node ? parent.right : parent.left;
 
       if (_isNodeIntersected(oppositeNode)) return true;
@@ -285,7 +285,7 @@ export class BVH<N, L> {
       if (node.object !== undefined) {
 
         if (onClosestDistance) {
-          let distance = onClosestDistance(node.object) ?? minDistanceSqPointToBox(node.box, point);
+          const distance = onClosestDistance(node.object) ?? minDistanceSqPointToBox(node.box, point);
           if (distance < bestDistance) bestDistance = distance;
         } else {
           bestDistance = minDistanceSqPointToBox(node.box, point); // this was already calculated actually

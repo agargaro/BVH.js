@@ -312,7 +312,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
 
       }
 
-    } while (nodeObj = sortedList.pop());
+    } while ((nodeObj = sortedList.pop()));
 
     return bestNode;
   }
@@ -320,7 +320,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
   protected refit(node: BVHNode<N, L>): void {
     unionBox(node.left.box, node.right.box, node.box);
 
-    while (node = node.parent) {
+    while ((node = node.parent)) {
       if (!unionBoxChanged(node.left.box, node.right.box, node.box)) return;
     }
   }
@@ -332,7 +332,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
 
     unionBox(originalNodeBox, sibling.box, nodeBox);
 
-    while (node = node.parent) {
+    while ((node = node.parent)) {
       const nodeBox = node.box;
 
       // we can use 'expandBox(originalNodeBox, nodeBox);' here if we want to performs all rotation 
