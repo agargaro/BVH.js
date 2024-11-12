@@ -8,16 +8,16 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'bvh_js',
+      name: 'cavolfiore',
       fileName: 'index',
       formats: ['es', 'cjs'],
     },
   },
   plugins: [
-    dts(),
+    dts({ tsconfigPath: 'tsconfig.build.json' }),
     viteStaticCopy({
       targets: [{
-        src: ['LICENSE', 'package.json', 'README.md'],
+        src: ['LICENSE', 'package.json', 'package-lock.json', 'README.md'],
         dest: './'
       }]
     })
