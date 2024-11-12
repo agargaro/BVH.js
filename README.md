@@ -1,4 +1,16 @@
-# Dynamic BVH
+<div align="center">
+  
+  <h1>BVH.js</h1>
+
+  <!-- <img src="public/banner.png" alt="bvh-banner" /> <br /> -->
+
+  [![npm](https://img.shields.io/npm/v/bvh.js)](https://www.npmjs.com/package/bvh.js)
+  [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=agargaro_BVH.js&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=agargaro_BVH.js)
+  [![DeepScan grade](https://deepscan.io/api/teams/21196/projects/27907/branches/893517/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=21196&pid=27907&bid=893517)
+  [![Stars](https://badgen.net/github/stars/agargaro/bvh.js)](https://github.com/agargaro/bvh.js)
+  [![BundlePhobia](https://badgen.net/bundlephobia/min/bvh.js)](https://bundlephobia.com/package/bvh.js)
+
+</div>
 
 Work in progress... will be released soon :)
 
@@ -32,7 +44,7 @@ isNodeIntersected <br>
 traverseByScore  <br>
 intersectsRayFirst  <br>
 intersectsBVH  <br>
-closestPointToGeometry  <br>
+closestPointToBVH  <br>
 getAllCollision  <br>
 getNearestObject <br>
 
