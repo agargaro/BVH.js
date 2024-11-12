@@ -8,7 +8,6 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'cavolfiore',
       fileName: 'index',
       formats: ['es', 'cjs'],
     },
