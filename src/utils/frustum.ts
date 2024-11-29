@@ -1,4 +1,4 @@
-import { FloatArray } from "../core/BVHNode.js";
+import { FloatArray } from '../core/BVHNode.js';
 
 export const WebGLCoordinateSystem = 0;
 export const WebGPUCoordinateSystem = 1;
@@ -21,13 +21,9 @@ export class Frustum {
     this.updatePlane(4, mat[3] - mat[2], mat[7] - mat[6], mat[11] - mat[10], mat[15] - mat[14]); // Far clipping plane
 
     if (this.coordinateSystem === WebGLCoordinateSystem) {
-
-      this.updatePlane(5, mat[3] + mat[2], mat[7] + mat[6], mat[11] + mat[10], mat[15] + mat[14]) // Near clipping plane
-
+      this.updatePlane(5, mat[3] + mat[2], mat[7] + mat[6], mat[11] + mat[10], mat[15] + mat[14]); // Near clipping plane
     } else if (this.coordinateSystem === WebGPUCoordinateSystem) {
-
       this.updatePlane(5, mat[2], mat[6], mat[10], mat[14]); // Near clipping plane
-
     } else throw new Error('Invalid coordinate system: ' + this.coordinateSystem);
 
     return this;

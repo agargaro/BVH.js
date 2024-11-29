@@ -1,8 +1,8 @@
-import { IBVHBuilder, onLeafCreationCallback } from "../builder/IBVHBuilder.js";
-import { minDistanceSqPointToBox, minMaxDistanceSqPointToBox } from "../utils/boxUtils.js";
-import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from "../utils/frustum.js";
-import { intersectBoxBox, intersectRayBox, intersectSphereBox } from "../utils/intersectUtils.js";
-import { BVHNode, FloatArray } from "./BVHNode.js";
+import { IBVHBuilder, onLeafCreationCallback } from '../builder/IBVHBuilder.js';
+import { minDistanceSqPointToBox, minMaxDistanceSqPointToBox } from '../utils/boxUtils.js';
+import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from '../utils/frustum.js';
+import { intersectBoxBox, intersectRayBox, intersectSphereBox } from '../utils/intersectUtils.js';
+import { BVHNode, FloatArray } from './BVHNode.js';
 
 export type onTraverseCallback<N, L> = (node: BVHNode<N, L>, depth: number) => boolean;
 export type onIntersectionCallback<L> = (obj: L) => boolean;
@@ -56,7 +56,6 @@ export class BVH<N, L> {
     _traverse(this.root, 0);
 
     function _traverse(node: BVHNode<N, L>, depth: number): void {
-
       if (node.object !== undefined) { // is leaf
         callback(node, depth);
         return;
@@ -75,7 +74,7 @@ export class BVH<N, L> {
     const dirInv = this._dirInv;
     const sign = this._sign;
 
-    //TODO provare a non passare array
+    // TODO provare a non passare array
 
     dirInv[0] = 1 / dir[0];
     dirInv[1] = 1 / dir[1];
@@ -177,7 +176,6 @@ export class BVH<N, L> {
 
     function _frustumCulling(node: BVHNode<N, L>, mask: number): void {
       if (node.object !== undefined) {
-
         if (frustum.isIntersected(node.box, mask)) {
           onIntersection(node, frustum, mask);
         }
@@ -223,7 +221,6 @@ export class BVH<N, L> {
       }
 
       if (node.object !== undefined) {
-
         if (frustum.isIntersected(nodeBox, mask)) {
           onIntersection(node, level, frustum, mask);
         }
@@ -273,7 +270,7 @@ export class BVH<N, L> {
     }
   }
 
-  // onClosestDistance callback should return SQUARED distance 
+  // onClosestDistance callback should return SQUARED distance
   public closestPointToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): number {
     let bestDistance = Infinity;
 
@@ -283,7 +280,6 @@ export class BVH<N, L> {
 
     function _closestPointToPoint(node: BVHNode<N, L>): void {
       if (node.object !== undefined) {
-
         if (onClosestDistance) {
           const distance = onClosestDistance(node.object) ?? minDistanceSqPointToBox(node.box, point);
           if (distance < bestDistance) bestDistance = distance;
@@ -298,21 +294,14 @@ export class BVH<N, L> {
       const rightDistance = minDistanceSqPointToBox(node.right.box, point);
 
       if (leftDistance < rightDistance) {
-
         if (leftDistance < bestDistance) {
-
           _closestPointToPoint(node.left);
           if (rightDistance < bestDistance) _closestPointToPoint(node.right);
-
         }
-
       } else if (rightDistance < bestDistance) {
-
         _closestPointToPoint(node.right);
         if (leftDistance < bestDistance) _closestPointToPoint(node.left);
-
       }
     }
   }
 }
-

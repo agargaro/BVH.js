@@ -1,24 +1,23 @@
-import { resolve } from 'path'
-import { defineConfig } from 'vite'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
-import dts from 'vite-plugin-dts'
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  publicDir: command === 'build' ? false : 'public',
   build: {
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      fileName: 'index',
-      formats: ['es', 'cjs'],
-    },
+      fileName: 'build/index',
+      formats: ['es', 'cjs']
+    }
   },
   plugins: [
-    dts({ tsconfigPath: 'tsconfig.build.json' }),
     viteStaticCopy({
       targets: [{
-        src: ['LICENSE', 'package.json', 'package-lock.json', 'README.md'],
+        src: ['LICENSE', 'package.json', 'README.md'],
         dest: './'
       }]
     })
   ]
-})
+}));

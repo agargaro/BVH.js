@@ -171,9 +171,9 @@ export function minDistancePointToBox(box: FloatArray, point: FloatArray): numbe
   return Math.sqrt(minDistanceSqPointToBox(box, point));
 }
 
-export function minMaxDistanceSqPointToBox(box: FloatArray, point: FloatArray): { min: number, max: number } {
+export function minMaxDistanceSqPointToBox(box: FloatArray, point: FloatArray): { min: number; max: number } {
   let dXmin, dXmax, dYmin, dYmax, dZmin, dZmax;
-  
+
   const xMin = box[0] - point[0];
   const xMax = point[0] - box[1];
 
@@ -215,11 +215,11 @@ export function minMaxDistanceSqPointToBox(box: FloatArray, point: FloatArray): 
 
   return {
     min: dXmin * dXmin + dYmin * dYmin + dZmin * dZmin,
-    max: dXmax * dXmax + dYmax * dYmax + dZmax * dZmax,
+    max: dXmax * dXmax + dYmax * dYmax + dZmax * dZmax
   };
 }
 
-export function minMaxDistancePointToBox(box: FloatArray, point: FloatArray): { min: number, max: number } {
+export function minMaxDistancePointToBox(box: FloatArray, point: FloatArray): { min: number; max: number } {
   const result = minMaxDistanceSqPointToBox(box, point);
   result.min = Math.sqrt(result.min);
   result.max = Math.sqrt(result.max);

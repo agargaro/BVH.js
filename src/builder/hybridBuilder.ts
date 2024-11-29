@@ -18,7 +18,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
   public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>, margin = 0): void {
     const maxCount = boxes.length;
     const typeArray = this._typeArray;
-    if (typeArray !== (boxes[0].BYTES_PER_ELEMENT === 4 ? Float32Array : Float64Array)) console.warn("Different precision.");
+    if (typeArray !== (boxes[0].BYTES_PER_ELEMENT === 4 ? Float32Array : Float64Array)) console.warn('Different precision.');
     const centroid = new typeArray(6);
     let axis: number;
     let position: number;
@@ -42,7 +42,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
       let leftEndOffset = split(offset, count);
 
       if (leftEndOffset === offset || leftEndOffset === offset + count) {
-        leftEndOffset = offset + (count >> 1) // this is a workaround. TODO IMPROVE THIS TRYING DIFFERENT AXIS
+        leftEndOffset = offset + (count >> 1); // this is a workaround. TODO IMPROVE THIS TRYING DIFFERENT AXIS
       }
 
       const node = { box, parent } as BVHNode<N, L>;
@@ -124,10 +124,8 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
         const boxLeft = boxes[left];
         if ((boxLeft[axis + 1] + boxLeft[axis]) * 0.5 >= position) { // if equals, lies on right
           while (true) {
-
             const boxRight = boxes[right];
             if ((boxRight[axis + 1] + boxRight[axis]) * 0.5 < position) {
-
               const tempObject = objects[left];
               objects[left] = objects[right];
               objects[right] = tempObject;
@@ -164,19 +162,18 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
   }
 
   public insertRange(objects: L[], boxes: FloatArray[], margins?: number | FloatArray | number[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
-    console.warn("Method not optimized yet. It just calls 'insert' N times.");
+    console.warn('Method not optimized yet. It just calls \'insert\' N times.');
 
     const count = objects.length;
     const margin = (margins as number) > 0 ? margins : (!margins ? 0 : null);
 
     for (let i = 0; i < count; i++) {
-      const node = this.insert(objects[i], boxes[i], margin ?? margins[i])
+      const node = this.insert(objects[i], boxes[i], margin ?? margins[i]);
       if (onLeafCreation) onLeafCreation(node);
     }
   }
 
-
-  //update node.box before calling this function
+  // update node.box before calling this function
   public move(node: BVHNode<N, L>, margin: number): void {
     if (!node.parent || isBoxInsideBox(node.box, node.parent.box)) {
       if (margin > 0) expandBoxByMargin(node.box, margin);
@@ -295,23 +292,18 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
       }
 
       if (inheritedCostR > inheritedCostL) {
-
         if (leafArea + inheritedCostL >= bestCost) continue;
         if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
 
         if (leafArea + inheritedCostR >= bestCost) continue;
         if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
-
       } else {
-
         if (leafArea + inheritedCostR >= bestCost) continue;
         if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
 
         if (leafArea + inheritedCostL >= bestCost) continue;
         if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
-
       }
-
     } while ((nodeObj = sortedList.pop()));
 
     return bestNode;
@@ -335,7 +327,7 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
     while ((node = node.parent)) {
       const nodeBox = node.box;
 
-      // we can use 'expandBox(originalNodeBox, nodeBox);' here if we want to performs all rotation 
+      // we can use 'expandBox(originalNodeBox, nodeBox);' here if we want to performs all rotation
       if (!isExpanded(originalNodeBox, nodeBox)) return; // this avoid some rotations but is less expensive
 
       const left = node.left;
@@ -408,5 +400,4 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
 
     unionBox(parentB.left.box, parentB.right.box, parentBox);
   }
-
 }
