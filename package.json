@@ -1,7 +1,7 @@
 {
   "name": "bvh.js",
-  "version": "0.0.11",
-  "description": "BVH implementation",
+  "version": "0.0.12",
+  "description": "Dynamic BVH implementation based on Erin Catto's paper.",
   "author": "Andrea Gargaro <devgargaro@gmail.com>",
   "license": "MIT",
   "type": "module",
@@ -25,12 +25,13 @@
   "keywords": [
     "bvh",
     "raycast",
-    "frustum culling",
+    "frustum-culling",
     "bounds-hierarchy",
     "performance",
     "three",
     "intersection",
-    "acceleration"
+    "acceleration",
+    "spatial-indexing"
   ],
   "scripts": {
     "start": "vite",

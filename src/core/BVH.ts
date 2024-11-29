@@ -29,7 +29,9 @@ export class BVH<N, L> {
   }
 
   public createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>, margin?: number): void {
-    this.builder.createFromArray(objects, boxes, onLeafCreation, margin);
+    if (objects?.length > 0) {
+      this.builder.createFromArray(objects, boxes, onLeafCreation, margin);
+    }
   }
 
   public insert(object: L, box: FloatArray, margin: number): BVHNode<N, L> {
@@ -37,7 +39,9 @@ export class BVH<N, L> {
   }
 
   public insertRange(objects: L[], boxes: FloatArray[], margins?: number | FloatArray | number[], onLeafCreation?: onLeafCreationCallback<N, L>): void {
-    this.builder.insertRange(objects, boxes, margins, onLeafCreation);
+    if (objects?.length > 0) {
+      this.builder.insertRange(objects, boxes, margins, onLeafCreation);
+    }
   }
 
   public move(node: BVHNode<N, L>, margin: number): void {
