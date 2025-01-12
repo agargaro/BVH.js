@@ -57,6 +57,8 @@ export class BVH<N, L> {
   }
 
   public traverse(callback: onTraverseCallback<N, L>): void {
+    if (this.root === null) return;
+
     _traverse(this.root, 0);
 
     function _traverse(node: BVHNode<N, L>, depth: number): void {
@@ -75,6 +77,8 @@ export class BVH<N, L> {
   }
 
   public intersectsRay(dir: FloatArray, origin: FloatArray, onIntersection: onIntersectionCallback<L>, near = 0, far = Infinity): boolean {
+    if (this.root === null) return false;
+
     const dirInv = this._dirInv;
     const sign = this._sign;
 
@@ -100,6 +104,8 @@ export class BVH<N, L> {
   }
 
   public intersectsBox(box: FloatArray, onIntersection: onIntersectionCallback<L>): boolean {
+    if (this.root === null) return false;
+
     return _intersectsBox(this.root);
 
     function _intersectsBox(node: BVHNode<N, L>): boolean {
@@ -112,6 +118,8 @@ export class BVH<N, L> {
   }
 
   public intersectsSphere(center: FloatArray, radius: number, onIntersection: onIntersectionCallback<L>): boolean {
+    if (this.root === null) return false;
+
     return _intersectsSphere(this.root);
 
     function _intersectsSphere(node: BVHNode<N, L>): boolean {
@@ -147,6 +155,8 @@ export class BVH<N, L> {
   }
 
   public rayIntersections(dir: FloatArray, origin: FloatArray, onIntersection: onIntersectionRayCallback<L>, near = 0, far = Infinity): void {
+    if (this.root === null) return;
+
     const dirInv = this._dirInv;
     const sign = this._sign;
 
@@ -174,6 +184,8 @@ export class BVH<N, L> {
   }
 
   public frustumCulling(projectionMatrix: FloatArray | number[], onIntersection: onFrustumIntersectionCallback<N, L>): void {
+    if (this.root === null) return;
+
     const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
 
     _frustumCulling(this.root, 0b111111);
@@ -213,6 +225,8 @@ export class BVH<N, L> {
   }
 
   public frustumCullingLOD(projectionMatrix: FloatArray | number[], cameraPosition: FloatArray, levels: FloatArray, onIntersection: onFrustumIntersectionLODCallback<N, L>): void {
+    if (this.root === null) return;
+
     const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
 
     _frustumCullingLOD(this.root, 0b111111, null);
@@ -276,6 +290,8 @@ export class BVH<N, L> {
 
   // onClosestDistance callback should return SQUARED distance
   public closestPointToPoint(point: FloatArray, onClosestDistance?: onClosestDistanceCallback<L>): number {
+    if (this.root === null) return;
+
     let bestDistance = Infinity;
 
     _closestPointToPoint(this.root);
