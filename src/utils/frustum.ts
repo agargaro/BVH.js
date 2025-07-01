@@ -42,7 +42,6 @@ export class Frustum {
   /** @internal returns -1 = OUT, 0 = IN, > 0 = INTERSECT. */
   public intersectsBoxMask(box: FloatArray, mask: number): number {
     const array = this.array;
-    let xMin: number, yMin: number, zMin: number, xMax: number, yMax: number, zMax: number;
 
     for (let i = 0; i < 6; i++) {
       if ((mask & (0b100000 >> i)) === 0) continue; // if bit i is 0
@@ -53,29 +52,16 @@ export class Frustum {
       const pz = array[offset + 2];
       const planeConstant = array[offset + 3];
 
-      if (px > 0) {
-        xMin = box[1];
-        xMax = box[0];
-      } else {
-        xMin = box[0];
-        xMax = box[1];
-      }
+      const ix = px > 0 ? 1 : 0;
+      const iy = py > 0 ? 3 : 2;
+      const iz = pz > 0 ? 5 : 4;
 
-      if (py > 0) {
-        yMin = box[3];
-        yMax = box[2];
-      } else {
-        yMin = box[2];
-        yMax = box[3];
-      }
-
-      if (pz > 0) {
-        zMin = box[5];
-        zMax = box[4];
-      } else {
-        zMin = box[4];
-        zMax = box[5];
-      }
+      const xMin = box[ix];
+      const xMax = box[ix ^ 1];
+      const yMin = box[iy];
+      const yMax = box[iy ^ 1];
+      const zMin = box[iz];
+      const zMax = box[iz ^ 1];
 
       if ((px * xMin) + (py * yMin) + (pz * zMin) < -planeConstant) {
         return -1; // is out
