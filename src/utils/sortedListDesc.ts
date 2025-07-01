@@ -4,7 +4,7 @@ export class SortedListDesc {
   public array: ItemListType[] = [];
 
   public clear(): void {
-    this.array = [];
+    this.array.length = 0;
   }
 
   public push(node: ItemListType): void {

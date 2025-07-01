@@ -42,12 +42,12 @@ export class Frustum {
   /** @internal returns -1 = OUT, 0 = IN, > 0 = INTERSECT. */
   public intersectsBoxMask(box: FloatArray, mask: number): number {
     const array = this.array;
-
     for (let i = 0; i < 6; i++) {
-      if ((mask & (0b100000 >> i)) === 0) continue; // if bit i is 0
+      const bit = 0b100000 >> i;
+      if ((mask & bit) === 0) continue;
 
       const offset = i * 4;
-      const px = array[offset + 0];
+      const px = array[offset];
       const py = array[offset + 1];
       const pz = array[offset + 2];
       const planeConstant = array[offset + 3];
@@ -63,27 +63,28 @@ export class Frustum {
       const zMin = box[iz];
       const zMax = box[iz ^ 1];
 
-      if ((px * xMin) + (py * yMin) + (pz * zMin) < -planeConstant) {
-        return -1; // is out
+      const minDot = (px * xMin) + (py * yMin) + (pz * zMin);
+      if (minDot < -planeConstant) {
+        return -1;
       }
 
-      if ((px * xMax) + (py * yMax) + (pz * zMax) > -planeConstant) {
-        mask ^= 0b100000 >> i; // is full in, set bit i to 0
+      const maxDot = (px * xMax) + (py * yMax) + (pz * zMax);
+      if (maxDot > -planeConstant) {
+        mask ^= bit;
       }
     }
-
     return mask;
   }
 
   /** @internal */
   public isIntersected(box: FloatArray, mask: number): boolean {
     const array = this.array;
-
     for (let i = 0; i < 6; i++) {
-      if ((mask & (0b100000 >> i)) === 0) continue; // if bit i is 0
+      const bit = 0b100000 >> i;
+      if ((mask & bit) === 0) continue;
 
       const offset = i * 4;
-      const px = array[offset + 0];
+      const px = array[offset];
       const py = array[offset + 1];
       const pz = array[offset + 2];
       const planeConstant = array[offset + 3];
@@ -92,23 +93,22 @@ export class Frustum {
       const yMin = py > 0 ? box[3] : box[2];
       const zMin = pz > 0 ? box[5] : box[4];
 
-      if ((px * xMin) + (py * yMin) + (pz * zMin) < -planeConstant) return false;
+      const minDot = (px * xMin) + (py * yMin) + (pz * zMin);
+      if (minDot < -planeConstant) return false;
     }
-
     return true;
   }
 
   // use it only in 'onFrustumIntersectionCallback' if you have margin > 0.
   public isIntersectedMargin(box: FloatArray, mask: number, margin: number): boolean {
     if (mask === 0) return true;
-
     const array = this.array;
-
     for (let i = 0; i < 6; i++) {
-      if ((mask & (0b100000 >> i)) === 0) continue; // if bit i is 0
+      const bit = 0b100000 >> i;
+      if ((mask & bit) === 0) continue;
 
       const offset = i * 4;
-      const px = array[offset + 0];
+      const px = array[offset];
       const py = array[offset + 1];
       const pz = array[offset + 2];
       const planeConstant = array[offset + 3];
@@ -117,9 +117,9 @@ export class Frustum {
       const yMin = py > 0 ? box[3] - margin : box[2] + margin;
       const zMin = pz > 0 ? box[5] - margin : box[4] + margin;
 
-      if ((px * xMin) + (py * yMin) + (pz * zMin) < -planeConstant) return false;
+      const minDot = (px * xMin) + (py * yMin) + (pz * zMin);
+      if (minDot < -planeConstant) return false;
     }
-
     return true;
   }
 }
