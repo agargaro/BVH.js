@@ -17,48 +17,53 @@ export class Heap<E> {
   }
 
   public poll(): E | undefined {
-    if (this._elements.length === 0) return;
-    const value = this._elements[0];
-    const last = this._elements.pop();
-    if (this._elements.length) {
-      this._elements[0] = last;
-      this._sinkDown(0, this._elements.length >> 1);
+    const elements = this._elements;
+    if (elements.length === 0) return;
+    const value = elements[0];
+    const last = elements.pop();
+    if (elements.length) {
+      elements[0] = last;
+      this._sinkDown(0, elements.length >> 1);
     }
     return value;
   }
 
   public clear(): void {
-    this._elements = [];
+    this._elements.length = 0;
   }
 
   protected _bubbleUp(index: number): boolean {
-    const element = this._elements[index];
+    const comparator = this._comparator;
+    const elements = this._elements;
+    const element = elements[index];
     while (index > 0) {
       const parent = (index - 1) >> 1;
-      const parentItem = this._elements[parent];
-      if (this._comparator(parentItem, element) <= 0) break;
-      this._elements[index] = parentItem;
+      const parentItem = elements[parent];
+      if (comparator(parentItem, element) <= 0) break;
+      elements[index] = parentItem;
       index = parent;
     }
-    this._elements[index] = element;
+    elements[index] = element;
     return true;
   }
 
   protected _sinkDown(index: number, halfLength: number): boolean {
-    const element = this._elements[index];
+    const elements = this._elements;
+    const element = elements[index];
+    const comparator = this._comparator;
     while (index < halfLength) {
       let left = (index << 1) | 1;
       const right = left + 1;
-      let minItem = this._elements[left];
-      if (right < this._elements.length && this._comparator(minItem, this._elements[right]) > 0) {
+      let minItem = elements[left];
+      if (right < elements.length && comparator(minItem, elements[right]) > 0) {
         left = right;
-        minItem = this._elements[right];
+        minItem = elements[right];
       }
-      if (this._comparator(minItem, element) >= 0) break;
-      this._elements[index] = minItem;
+      if (comparator(minItem, element) >= 0) break;
+      elements[index] = minItem;
       index = left;
     }
-    this._elements[index] = element;
+    elements[index] = element;
     return true;
   }
 }
