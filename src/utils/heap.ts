@@ -17,7 +17,7 @@ export class MinHeap {
     const elements = this._elements;
     if (elements.length === 0) return;
     const value = elements[0];
-    const last = elements.pop()!;
+    const last = elements.pop();
     if (elements.length) {
       elements[0] = last;
       this._sinkDown(0, elements.length >> 1);
