@@ -293,16 +293,16 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
 
       if (inheritedCostR > inheritedCostL) {
         if (leafArea + inheritedCostL >= bestCost) continue;
-        if (nodeL.object === undefined) minHeap.add(nodeL, inheritedCostL);
+        if (nodeL.object === undefined) minHeap.add({ node: nodeL, value: inheritedCostL });
 
         if (leafArea + inheritedCostR >= bestCost) continue;
-        if (nodeR.object === undefined) minHeap.add(nodeR, inheritedCostR);
+        if (nodeR.object === undefined) minHeap.add({ node: nodeR, value: inheritedCostR });
       } else {
         if (leafArea + inheritedCostR >= bestCost) continue;
-        if (nodeR.object === undefined) minHeap.add(nodeR, inheritedCostR);
+        if (nodeR.object === undefined) minHeap.add({ node: nodeR, value: inheritedCostR });
 
         if (leafArea + inheritedCostL >= bestCost) continue;
-        if (nodeL.object === undefined) minHeap.add(nodeL, inheritedCostL);
+        if (nodeL.object === undefined) minHeap.add({ node: nodeL, value: inheritedCostL });
       }
     } while ((nodeObj = minHeap.poll()));
 

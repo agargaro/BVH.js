@@ -7,32 +7,17 @@ export type HeapItem = { value: number; node: BVHNode<unknown, unknown> };
  */
 export class MinHeap {
   protected _elements: HeapItem[] = [];
-  protected _pool: HeapItem[] = [];
-  protected _poolIndex: number = 0;
 
-  public add(node: BVHNode<unknown, unknown>, value: number): boolean {
-    const pool = this._pool;
-    const elements = this._elements;
-    const poolIndex = this._poolIndex;
-
-    if (poolIndex >= pool.length) {
-      pool.push({ value: -1, node: null });
-    }
-
-    const item = pool[poolIndex];
-    item.node = node;
-    item.value = value;
-
-    this._poolIndex++;
-    elements.push(item);
-    return this._bubbleUp(elements.length - 1);
+  public add(element: HeapItem): boolean {
+    this._elements.push(element);
+    return this._bubbleUp(this._elements.length - 1);
   }
 
   public poll(): HeapItem | undefined {
     const elements = this._elements;
     if (elements.length === 0) return;
     const value = elements[0];
-    const last = elements.pop();
+    const last = elements.pop()!;
     if (elements.length) {
       elements[0] = last;
       this._sinkDown(0, elements.length >> 1);
@@ -41,7 +26,6 @@ export class MinHeap {
   }
 
   public clear(): void {
-    this._poolIndex = 0;
     this._elements.length = 0;
   }
 
