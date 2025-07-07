@@ -6,6 +6,7 @@ export type HeapItem = { value: number; node: BVHNode<unknown, unknown> };
  * @reference https://github.com/zrwusa/data-structure-typed/blob/main/src/data-structures/heap/heap.ts
  */
 export class MinHeap {
+  public maxSize = 16;
   protected _elements: HeapItem[] = [];
 
   public add(element: HeapItem): boolean {
@@ -23,6 +24,10 @@ export class MinHeap {
       this._sinkDown(0, elements.length >> 1);
     }
     return value;
+  }
+
+  public isFull(): boolean {
+    return this._elements.length >= this.maxSize;
   }
 
   public clear(): void {
