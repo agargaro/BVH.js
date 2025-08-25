@@ -1,12 +1,12 @@
-import { FloatArray } from '../core/BVHNode.js';
+import { FloatArray } from '../builder/IBVHBuilder.js';
 
-export function unionBox(A: FloatArray, B: FloatArray, target: FloatArray): void {
-  target[0] = A[0] > B[0] ? B[0] : A[0];
-  target[1] = A[1] < B[1] ? B[1] : A[1];
-  target[2] = A[2] > B[2] ? B[2] : A[2];
-  target[3] = A[3] < B[3] ? B[3] : A[3];
-  target[4] = A[4] > B[4] ? B[4] : A[4];
-  target[5] = A[5] < B[5] ? B[5] : A[5];
+export function unionBox(box: FloatArray, srcA: number, srcB: number, dstId: number): void {
+  box[dstId] = box[srcA] > box[srcB] ? box[srcB] : box[srcA];
+  box[dstId + 1] = box[srcA + 1] < box[srcB + 1] ? box[srcB + 1] : box[srcA + 1];
+  box[dstId + 2] = box[srcA + 2] > box[srcB + 2] ? box[srcB + 2] : box[srcA + 2];
+  box[dstId + 3] = box[srcA + 3] < box[srcB + 3] ? box[srcB + 3] : box[srcA + 3];
+  box[dstId + 4] = box[srcA + 4] > box[srcB + 4] ? box[srcB + 4] : box[srcA + 4];
+  box[dstId + 5] = box[srcA + 5] < box[srcB + 5] ? box[srcB + 5] : box[srcA + 5];
 }
 
 export function unionBoxChanged(A: FloatArray, B: FloatArray, target: FloatArray): boolean {

@@ -1,14 +1,17 @@
-import { BVHNode, FloatArray } from '../core/BVHNode.js';
+export type FloatArray = Float32Array | Float64Array;
+export type FloatArrayType = typeof Float32Array | typeof Float64Array;
+export type NumberArray = Float32Array | number[];
 
-export type onLeafCreationCallback<N, L> = (node: BVHNode<N, L>) => void;
+export type onLeafCreationCallback = (nodeId: number) => void;
 
-export interface IBVHBuilder<N, L> {
-  root: BVHNode<N, L>;
-  createFromArray(objects: L[], boxes: FloatArray[], onLeafCreation?: onLeafCreationCallback<N, L>, margin?: number): void;
-  insert(object: L, box: FloatArray, margin: number): BVHNode<N, L>;
-  insertRange(objects: L[], boxes: FloatArray[], margins?: number | FloatArray | number[], onLeafCreation?: onLeafCreationCallback<N, L>): void;
-  move(node: BVHNode<N, L>, margin: number): void;
-  delete(node: BVHNode<N, L>): BVHNode<N, L>;
+export interface IBVHBuilder {
+  readonly useFloat64: boolean;
+  rootId: number | null;
+  // createFromArray(objectsId: NumberArray, boxes: FloatArray[], margin?: number): void;
+  insert(objectId: number, box: FloatArray, margin?: number): number;
+  insertRange(objectsId: NumberArray, boxes: FloatArray[], margins?: number | NumberArray, onLeafCreation?: onLeafCreationCallback): void;
+  // insertChunk(): void;
+  // move(nodeId: number, margin?: number): void;
+  // delete(nodeId: number): number;
   clear(): void;
-  readonly highPrecision: boolean;
 }

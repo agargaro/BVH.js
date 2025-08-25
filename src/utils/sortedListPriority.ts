@@ -1,4 +1,4 @@
-type ItemListType = { node: any; inheritedCost: number }; // fix d.ts
+type ItemListType = { nodeId: any; inheritedCost: number }; // fix d.ts
 
 export class SortedListPriority {
   public array: ItemListType[] = [];
