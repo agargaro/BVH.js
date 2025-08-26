@@ -6,6 +6,10 @@ export type onLeafCreationCallback = (nodeId: number) => void;
 
 export interface IBVHBuilder {
   readonly useFloat64: boolean;
+  readonly box: FloatArray; // [minX, maxX, minY, maxY, minZ, maxZ, ...] // TODO consider to use single array
+  readonly parent: Int32Array;
+  readonly children: Int32Array; // left and right pointer
+  readonly objectId: Int32Array;
   rootId: number | null;
   // createFromArray(objectsId: NumberArray, boxes: FloatArray[], margin?: number): void;
   insert(objectId: number, box: FloatArray, margin?: number): number;

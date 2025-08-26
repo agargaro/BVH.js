@@ -1,4 +1,4 @@
-import { FloatArray } from '../core/BVHNode.js';
+import { FloatArray } from '../builder/IBVHBuilder.js';
 import { minDistanceSqPointToBox } from './boxUtils.js';
 
 export function intersectRayBox(box: FloatArray, origins: FloatArray, dirsInv: FloatArray, signs: Uint8Array, near: number, far: number): boolean {

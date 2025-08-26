@@ -1,4 +1,4 @@
-import { FloatArray } from '../core/BVHNode.js';
+import { FloatArray } from "../builder/IBVHBuilder.js";
 
 export interface Vector3 {
   x: number;
@@ -10,6 +10,8 @@ export interface Box3 {
   min: Vector3;
   max: Vector3;
 }
+
+// rifattorizzare queste che non vanno più bene
 
 export function vec3ToArray(vector: Vector3, target: FloatArray): FloatArray {
   target[0] = vector.x;

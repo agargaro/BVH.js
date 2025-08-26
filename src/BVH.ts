@@ -181,44 +181,52 @@ export class BVH {
   }
 
   public frustumCulling(projectionMatrix: FloatArray | number[], onIntersection: onFrustumIntersectionCallback): void {
-    // if (this.root === null) return;
+    if (this.root === null) return;
 
-    // const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
+    const builder = this.builder;
+    const box = builder.box;
+    const objectId = builder.objectId;
+    const children = builder.children;
 
-    // _frustumCulling(this.root, 0b111111);
+    const frustum = this.frustum.setFromProjectionMatrix(projectionMatrix);
 
-    // function _frustumCulling(node: BVHNode, mask: number): void {
-    //   if (node.object !== undefined) {
-    //     if (frustum.isIntersected(node.box, mask)) {
-    //       onIntersection(node, frustum, mask);
-    //     }
+    _frustumCulling(this.root, 0b111111);
 
-    //     return;
-    //   }
+    function _frustumCulling(nodeId: number, mask: number): void {
+      if (objectId[nodeId] !== -1) {
+        if (frustum.isIntersected(box, nodeId * 6, mask)) {
+          onIntersection(nodeId, frustum, mask);
+        }
 
-    //   mask = frustum.intersectsBoxMask(node.box, mask);
+        return;
+      }
 
-    //   if (mask < 0) return; // -1 = out
+      mask = frustum.intersectsBoxMask(box, nodeId * 6, mask);
 
-    //   if (mask === 0) { // 0 = in
-    //     showAll(node.left);
-    //     showAll(node.right);
-    //     return;
-    //   }
+      if (mask < 0) return; // -1 = out
 
-    //   _frustumCulling(node.left, mask);
-    //   _frustumCulling(node.right, mask);
-    // }
+      const childrenId = nodeId * 2;
 
-    // function showAll(node: BVHNode): void {
-    //   if (node.object !== undefined) {
-    //     onIntersection(node, frustum, 0);
-    //     return;
-    //   }
+      if (mask === 0) { // 0 = in
+        showAll(children[childrenId]);
+        showAll(children[childrenId + 1]);
+        return;
+      }
 
-    //   showAll(node.left);
-    //   showAll(node.right);
-    // }
+      _frustumCulling(children[childrenId], mask);
+      _frustumCulling(children[childrenId + 1], mask);
+    }
+
+    function showAll(nodeId: number): void {
+      if (objectId[nodeId] !== -1) {
+        onIntersection(nodeId, frustum, 0);
+        return;
+      }
+
+      const childrenId = nodeId * 2;
+      showAll(children[childrenId]);
+      showAll(children[childrenId + 1]);
+    }
   }
 
   public frustumCullingLOD(projectionMatrix: FloatArray | number[], cameraPosition: FloatArray, levels: FloatArray, onIntersection: onFrustumIntersectionLODCallback): void {

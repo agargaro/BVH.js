@@ -260,8 +260,7 @@ export class HybridBuilder implements IBVHBuilder {
   protected insertLeaf(leafId: number, newParentId?: number): void {
     const parent = this.parent;
     const children = this.children;
-    const leafBox = this.box[leafId];
-    const siblingId = this.findBestSibling(leafBox);
+    const siblingId = this.findBestSibling(leafId);
 
     const oldParentId = parent[siblingId];
 
@@ -287,21 +286,23 @@ export class HybridBuilder implements IBVHBuilder {
     this.refitAndRotate(leafId, siblingId);
   }
 
-  protected findBestSibling(leafBox: FloatArray): number {
+  // TODO check performance with a temporary box copy
+  protected findBestSibling(leafId: number): number {
     const objectId = this.objectId;
     const rootId = this.rootId;
     if (objectId[rootId] !== -1) return rootId;
 
     const box = this.box;
     const children = this.children;
-    const leafArea = areaBox(leafBox);
+    const leafBoxOffset = leafId * 6;
+    const leafArea = areaBox(box, leafBoxOffset);
     let bestNodeId = rootId;
-    let bestCost = areaFromTwoBoxes(leafBox, box[rootId]);
+    let bestCost = areaFromTwoBoxes(box, leafBoxOffset, rootId * 6);
 
     const sortedList = this._sortedList;
     sortedList.clear();
 
-    let nodeObj = { nodeId: rootId, inheritedCost: bestCost - areaBox(box[rootId]) }; // TODO satisfies ItemListType;
+    let nodeObj = { nodeId: rootId, inheritedCost: bestCost - areaBox(box, rootId * 6) }; // TODO satisfies ItemListType;
 
     do {
       const { nodeId, inheritedCost } = nodeObj;
@@ -312,15 +313,15 @@ export class HybridBuilder implements IBVHBuilder {
       const nodeL = children[childrenId];
       const nodeR = children[childrenId + 1];
 
-      const boxL = box[nodeL];
-      const directCostL = areaFromTwoBoxes(leafBox, boxL);
+      const boxL = nodeL * 6;
+      const directCostL = areaFromTwoBoxes(box, leafBoxOffset, boxL);
       const currentCostL = directCostL + inheritedCost;
-      const inheritedCostL = currentCostL - areaBox(boxL);
+      const inheritedCostL = currentCostL - areaBox(box, boxL);
 
-      const boxR = box[nodeR];
-      const directCostR = areaFromTwoBoxes(leafBox, boxR);
+      const boxR = nodeR * 6;
+      const directCostR = areaFromTwoBoxes(box, leafBoxOffset, boxR);
       const currentCostR = directCostR + inheritedCost;
-      const inheritedCostR = currentCostR - areaBox(boxR);
+      const inheritedCostR = currentCostR - areaBox(box, boxR);
 
       if (currentCostL > currentCostR) {
         if (bestCost > currentCostR) {
@@ -354,13 +355,14 @@ export class HybridBuilder implements IBVHBuilder {
     const box = this.box;
     const parent = this.parent;
     const children = this.children;
+    const nodeOffset = nodeId * 6;
     let childrenId = nodeId * 2;
 
-    unionBox(box[children[childrenId]], box[children[childrenId + 1]], box[nodeId]);
+    unionBox(box, children[childrenId] * 6, children[childrenId + 1] * 6, nodeOffset);
 
     while ((nodeId = parent[nodeId]) !== -1) {
       childrenId = nodeId * 2;
-      if (!unionBoxChanged(box[children[childrenId]], box[children[childrenId + 1]], box[nodeId])) return;
+      if (!unionBoxChanged(box, children[childrenId] * 6, children[childrenId + 1] * 6, nodeOffset)) return;
     }
   }
 
@@ -370,23 +372,20 @@ export class HybridBuilder implements IBVHBuilder {
     const children = this.children;
     const objectId = this.objectId;
 
-    const originalNodeBox = box[nodeId];
+    const originalNodeBoxOffset = nodeId * 6;
     nodeId = parent[nodeId];
-    const nodeBox = box[nodeId];
 
-    unionBox(originalNodeBox, box[siblingId], nodeBox);
+    unionBox(box, originalNodeBoxOffset, siblingId * 6, nodeId * 6);
 
     while ((nodeId = parent[nodeId]) !== -1) {
-      const nodeBox = box[nodeId];
-
       // we can use 'expandBox(originalNodeBox, nodeBox);' here if we want to performs all rotation
-      if (!isExpanded(originalNodeBox, nodeBox)) return; // this avoid some rotations but is less expensive
+      if (!isExpanded(box, originalNodeBoxOffset, nodeId * 6)) return; // this avoid some rotations but is less expensive
 
       const childrenId = nodeId * 2;
       const leftId = children[childrenId];
       const rightId = children[childrenId + 1];
-      const leftBox = box[leftId];
-      const rightBox = box[rightId];
+      const leftBox = leftId * 6;
+      const rightBox = rightId * 6;
 
       let nodeSwap1 = -1;
       let nodeSwap2 = -1;
@@ -396,10 +395,10 @@ export class HybridBuilder implements IBVHBuilder {
         const rightChildrenId = rightId * 2;
         const RL = children[rightChildrenId];
         const RR = children[rightChildrenId + 1];
-        const rightArea = areaBox(box[rightId]);
+        const rightArea = areaBox(box, rightId);
 
-        const diffRR = rightArea - areaFromTwoBoxes(leftBox, box[RL]);
-        const diffRL = rightArea - areaFromTwoBoxes(leftBox, box[RR]);
+        const diffRR = rightArea - areaFromTwoBoxes(box, leftBox, RL * 6);
+        const diffRL = rightArea - areaFromTwoBoxes(box, leftBox, RR * 6);
 
         if (diffRR > diffRL) {
           if (diffRR > 0) {
@@ -418,10 +417,10 @@ export class HybridBuilder implements IBVHBuilder {
         const leftChildrenId = leftId * 2;
         const LL = children[leftChildrenId];
         const LR = children[leftChildrenId + 1];
-        const leftArea = areaBox(box[leftId]);
+        const leftArea = areaBox(box, leftId);
 
-        const diffLR = leftArea - areaFromTwoBoxes(rightBox, box[LL]);
-        const diffLL = leftArea - areaFromTwoBoxes(rightBox, box[LR]);
+        const diffLR = leftArea - areaFromTwoBoxes(box, rightBox, LL * 6);
+        const diffLL = leftArea - areaFromTwoBoxes(box, rightBox, LR * 6);
 
         if (diffLR > diffLL) {
           if (diffLR > bestCost) {

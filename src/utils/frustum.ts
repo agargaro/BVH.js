@@ -1,4 +1,4 @@
-import { FloatArray } from '../core/BVHNode.js';
+import { FloatArray } from '../builder/IBVHBuilder.js';
 
 export const WebGLCoordinateSystem = 0;
 export const WebGPUCoordinateSystem = 1;
@@ -33,14 +33,14 @@ export class Frustum {
     const array = this.array;
     const offset = index * 4;
     const length = Math.sqrt(x * x + y * y + z * z);
-    array[offset + 0] = x / length;
+    array[offset] = x / length;
     array[offset + 1] = y / length;
     array[offset + 2] = z / length;
     array[offset + 3] = constant / length;
   }
 
   /** @internal returns -1 = OUT, 0 = IN, > 0 = INTERSECT. */
-  public intersectsBoxMask(box: FloatArray, mask: number): number {
+  public intersectsBoxMask(box: FloatArray, boxOffset: number, mask: number): number {
     const array = this.array;
     for (let i = 0; i < 6; i++) {
       const bit = 0b100000 >> i;
@@ -56,12 +56,12 @@ export class Frustum {
       const iy = py > 0 ? 3 : 2;
       const iz = pz > 0 ? 5 : 4;
 
-      const xMin = box[ix];
-      const xMax = box[ix ^ 1];
-      const yMin = box[iy];
-      const yMax = box[iy ^ 1];
-      const zMin = box[iz];
-      const zMax = box[iz ^ 1];
+      const xMin = box[boxOffset + ix];
+      const xMax = box[boxOffset + ix ^ 1];
+      const yMin = box[boxOffset + iy];
+      const yMax = box[boxOffset + iy ^ 1];
+      const zMin = box[boxOffset + iz];
+      const zMax = box[boxOffset + iz ^ 1];
 
       const minDot = (px * xMin) + (py * yMin) + (pz * zMin);
       if (minDot < -planeConstant) {
@@ -77,7 +77,7 @@ export class Frustum {
   }
 
   /** @internal */
-  public isIntersected(box: FloatArray, mask: number): boolean {
+  public isIntersected(box: FloatArray, boxOffset: number, mask: number): boolean {
     const array = this.array;
     for (let i = 0; i < 6; i++) {
       const bit = 0b100000 >> i;
@@ -89,9 +89,9 @@ export class Frustum {
       const pz = array[offset + 2];
       const planeConstant = array[offset + 3];
 
-      const xMin = px > 0 ? box[1] : box[0];
-      const yMin = py > 0 ? box[3] : box[2];
-      const zMin = pz > 0 ? box[5] : box[4];
+      const xMin = px > 0 ? box[boxOffset + 1] : box[boxOffset];
+      const yMin = py > 0 ? box[boxOffset + 3] : box[boxOffset + 2];
+      const zMin = pz > 0 ? box[boxOffset + 5] : box[boxOffset + 4];
 
       const minDot = (px * xMin) + (py * yMin) + (pz * zMin);
       if (minDot < -planeConstant) return false;
@@ -100,7 +100,7 @@ export class Frustum {
   }
 
   // use it only in 'onFrustumIntersectionCallback' if you have margin > 0.
-  public isIntersectedMargin(box: FloatArray, mask: number, margin: number): boolean {
+  public isIntersectedMargin(box: FloatArray, boxOffset: number, mask: number, margin: number): boolean {
     if (mask === 0) return true;
     const array = this.array;
     for (let i = 0; i < 6; i++) {
@@ -113,9 +113,9 @@ export class Frustum {
       const pz = array[offset + 2];
       const planeConstant = array[offset + 3];
 
-      const xMin = px > 0 ? box[1] - margin : box[0] + margin;
-      const yMin = py > 0 ? box[3] - margin : box[2] + margin;
-      const zMin = pz > 0 ? box[5] - margin : box[4] + margin;
+      const xMin = px > 0 ? box[boxOffset + 1] - margin : box[boxOffset] + margin;
+      const yMin = py > 0 ? box[boxOffset + 3] - margin : box[boxOffset + 2] + margin;
+      const zMin = pz > 0 ? box[boxOffset + 5] - margin : box[boxOffset + 4] + margin;
 
       const minDot = (px * xMin) + (py * yMin) + (pz * zMin);
       if (minDot < -planeConstant) return false;
