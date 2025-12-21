@@ -5,7 +5,6 @@ export * from './core/BVHNode.js';
 export * from './utils/boxUtils.js';
 export * from './utils/conversionUtils.js';
 export * from './utils/frustum.js';
+export * from './utils/heap.js';
 export * from './utils/inspector.js';
 export * from './utils/intersectUtils.js';
-export * from './utils/sortedListDesc.js';
-export * from './utils/sortedListPriority.js';

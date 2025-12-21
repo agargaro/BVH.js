@@ -1,12 +1,11 @@
 import { BVHNode, FloatArray, FloatArrayType } from '../core/BVHNode.js';
 import { areaBox, areaFromTwoBoxes, expandBoxByMargin, getLongestAxis, isBoxInsideBox, isExpanded, unionBox, unionBoxChanged } from '../utils/boxUtils.js';
-import { SortedListPriority } from '../utils/sortedListPriority.js';
+import { HeapItem, MinHeap } from '../utils/heap.js';
 import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
 export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
   public root: BVHNode<N, L> = null;
   public readonly highPrecision: boolean;
-  protected _sortedList = new SortedListPriority();
   protected _typeArray: FloatArrayType;
   protected count = 0;
 
@@ -253,58 +252,64 @@ export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
     return { parent, left: sibling, right: leaf, box: new this._typeArray(6) } as BVHNode<N, L>;
   }
 
+  // TODO precalcola area nodo
   protected findBestSibling(leafBox: FloatArray): BVHNode<N, L> {
     const root = this.root;
+    if (root.object !== undefined) return root;
+
     let bestNode = root;
     let bestCost = areaFromTwoBoxes(leafBox, root.box);
     const leafArea = areaBox(leafBox);
+    _findBestSibling({ node: root, value: bestCost - areaBox(root.box) });
 
-    if (root.object !== undefined) return root;
+    function _findBestSibling(nodeObj: HeapItem): void {
+      const minHeap = new MinHeap();
 
-    const sortedList = this._sortedList;
-    sortedList.clear();
-    let nodeObj = { node: root, inheritedCost: bestCost - areaBox(root.box) };
+      do {
+        if (minHeap.isFull()) {
+          _findBestSibling(nodeObj);
+        } else {
+          const { node, value: inheritedCost } = nodeObj;
 
-    do {
-      const { node, inheritedCost } = nodeObj;
+          if (leafArea + inheritedCost >= bestCost) break;
 
-      if (leafArea + inheritedCost >= bestCost) break;
+          const nodeL = node.left;
+          const nodeR = node.right;
 
-      const nodeL = node.left;
-      const nodeR = node.right;
+          const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
+          const currentCostL = directCostL + inheritedCost;
+          const inheritedCostL = currentCostL - areaBox(nodeL.box);
 
-      const directCostL = areaFromTwoBoxes(leafBox, nodeL.box);
-      const currentCostL = directCostL + inheritedCost;
-      const inheritedCostL = currentCostL - areaBox(nodeL.box);
+          const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
+          const currentCostR = directCostR + inheritedCost;
+          const inheritedCostR = currentCostR - areaBox(nodeR.box);
 
-      const directCostR = areaFromTwoBoxes(leafBox, nodeR.box);
-      const currentCostR = directCostR + inheritedCost;
-      const inheritedCostR = currentCostR - areaBox(nodeR.box);
+          if (currentCostL > currentCostR) {
+            if (bestCost > currentCostR) {
+              bestNode = nodeR as BVHNode<N, L>;
+              bestCost = currentCostR;
+            }
+          } else if (bestCost > currentCostL) {
+            bestNode = nodeL as BVHNode<N, L>;
+            bestCost = currentCostL;
+          }
 
-      if (currentCostL > currentCostR) {
-        if (bestCost > currentCostR) {
-          bestNode = nodeR;
-          bestCost = currentCostR;
+          if (inheritedCostR > inheritedCostL) {
+            if (leafArea + inheritedCostL >= bestCost) continue;
+            if (nodeL.object === undefined) minHeap.add({ node: nodeL, value: inheritedCostL });
+
+            if (leafArea + inheritedCostR >= bestCost) continue;
+            if (nodeR.object === undefined) minHeap.add({ node: nodeR, value: inheritedCostR });
+          } else {
+            if (leafArea + inheritedCostR >= bestCost) continue;
+            if (nodeR.object === undefined) minHeap.add({ node: nodeR, value: inheritedCostR });
+
+            if (leafArea + inheritedCostL >= bestCost) continue;
+            if (nodeL.object === undefined) minHeap.add({ node: nodeL, value: inheritedCostL });
+          }
         }
-      } else if (bestCost > currentCostL) {
-        bestNode = nodeL;
-        bestCost = currentCostL;
-      }
-
-      if (inheritedCostR > inheritedCostL) {
-        if (leafArea + inheritedCostL >= bestCost) continue;
-        if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
-
-        if (leafArea + inheritedCostR >= bestCost) continue;
-        if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
-      } else {
-        if (leafArea + inheritedCostR >= bestCost) continue;
-        if (nodeR.object === undefined) sortedList.push({ node: nodeR, inheritedCost: inheritedCostR });
-
-        if (leafArea + inheritedCostL >= bestCost) continue;
-        if (nodeL.object === undefined) sortedList.push({ node: nodeL, inheritedCost: inheritedCostL });
-      }
-    } while ((nodeObj = sortedList.pop()));
+      } while ((nodeObj = minHeap.poll()));
+    }
 
     return bestNode;
   }
