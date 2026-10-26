@@ -2,13 +2,11 @@
 
 bvh.js: dynamic BVH (Erin Catto) published on npm, used in real-time 3D apps where queries run every frame. Performance is the product.
 
-## Commands
+## Workflow
 
-- `npm run build`: ESM bundle + declarations into `build/`. Publish from the repository root (`files` allowlist, `prepack` rebuilds).
-- `npm run lint` / `npm run lint:fix`: ESLint check / autofix (style is enforced there).
-- `npm run typecheck`: library and tooling types.
-- `npm test`: Vitest (`tests/**/*.test.ts`). Only the benchmark comparator is tested so far, `src/` has no tests: never claim the library is tested.
-- `npm run bench` / `npm run bench:compare`: CPU benchmarks and paired before/after comparison, see [benchmarks/README.md](benchmarks/README.md). `npm run bench:validate` only checks correctness (run in CI); `BENCH_COMPARE_ROOT` compares a baseline in the same process.
+- Before a PR run `npm run check`; report failing checks honestly.
+- `src/` has no unit tests yet: `npm run bench:validate` (brute-force references) is the only correctness check. Never claim the library is tested.
+- Publish from the repository root (`files` allowlist, `prepack` rebuilds), never from `build/`.
 
 ## Data conventions
 
