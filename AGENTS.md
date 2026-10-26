@@ -4,9 +4,11 @@ bvh.js: dynamic BVH (Erin Catto) published on npm, used in real-time 3D apps whe
 
 ## Commands
 
-- `npm run build`: library build + types into `dist/`. Publish only from `dist/`.
-- `npm run lint`: ESLint with autofix (style is enforced there).
-- `npm test`: not implemented yet. Never claim tests pass.
+- `npm run build`: ESM bundle + declarations into `build/`. Publish from the repository root (`files` allowlist, `prepack` rebuilds).
+- `npm run lint` / `npm run lint:fix`: ESLint check / autofix (style is enforced there).
+- `npm run typecheck`: library and tooling types.
+- `npm test`: Vitest (`tests/**/*.test.ts`). Only the benchmark comparator is tested so far, `src/` has no tests: never claim the library is tested.
+- `npm run bench` / `npm run bench:compare`: CPU benchmarks and paired before/after comparison, see [benchmarks/README.md](benchmarks/README.md). `npm run bench:validate` only checks correctness (run in CI); `BENCH_COMPARE_ROOT` compares a baseline in the same process.
 
 ## Data conventions
 
@@ -19,7 +21,7 @@ bvh.js: dynamic BVH (Erin Catto) published on npm, used in real-time 3D apps whe
 - Maximum V8 performance, monomorphic code everywhere: same object shape (same properties, same order, all set at creation), same argument types at every call site.
 - Initialize every field to `null`, never `undefined` or missing. Never `delete` properties.
 - Hot paths (queries, culling, insert/move/refit): zero allocations, no closures/spread/array callbacks/`console`; reuse instance buffers.
-- Any performance claim needs a before/after benchmark; if none exists, say so.
+- Any performance claim needs a before/after benchmark following [benchmarks/README.md](benchmarks/README.md); if no case covers the path, add one or say so.
 
 ## Public API
 

@@ -1,5 +1,5 @@
 import { BVH } from '../core/BVH.js';
-import { BVHNode } from '../core/BVHNode.js';
+import type { BVHNode } from '../core/BVHNode.js';
 import { areaBox } from './boxUtils.js';
 
 export class BVHInspector {

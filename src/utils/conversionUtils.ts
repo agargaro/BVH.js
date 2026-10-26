@@ -1,4 +1,4 @@
-import { FloatArray } from '../core/BVHNode.js';
+import type { FloatArray } from '../core/BVHNode.js';
 
 export interface Vector3 {
   x: number;
