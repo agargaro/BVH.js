@@ -1,7 +1,7 @@
-import { BVHNode, FloatArray, FloatArrayType } from '../core/BVHNode.js';
+import type { BVHNode, FloatArray, FloatArrayType } from '../core/BVHNode.js';
 import { areaBox, areaFromTwoBoxes, expandBoxByMargin, getLongestAxis, isBoxInsideBox, isExpanded, unionBox, unionBoxChanged } from '../utils/boxUtils.js';
 import { SortedListPriority } from '../utils/sortedListPriority.js';
-import { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
+import type { IBVHBuilder, onLeafCreationCallback } from './IBVHBuilder.js';
 
 export class HybridBuilder<N = {}, L = {}> implements IBVHBuilder<N, L> {
   public root: BVHNode<N, L> = null;

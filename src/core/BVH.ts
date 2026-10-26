@@ -1,8 +1,9 @@
-import { IBVHBuilder, onLeafCreationCallback } from '../builder/IBVHBuilder.js';
+import type { IBVHBuilder, onLeafCreationCallback } from '../builder/IBVHBuilder.js';
 import { minDistanceSqPointToBox, minMaxDistanceSqPointToBox } from '../utils/boxUtils.js';
-import { CoordinateSystem, Frustum, WebGLCoordinateSystem } from '../utils/frustum.js';
+import { Frustum, WebGLCoordinateSystem } from '../utils/frustum.js';
+import type { CoordinateSystem } from '../utils/frustum.js';
 import { intersectBoxBox, intersectRayBox, intersectSphereBox } from '../utils/intersectUtils.js';
-import { BVHNode, FloatArray } from './BVHNode.js';
+import type { BVHNode, FloatArray } from './BVHNode.js';
 
 export type onTraverseCallback<N, L> = (node: BVHNode<N, L>, depth: number) => boolean;
 export type onIntersectionCallback<L> = (obj: L) => boolean;

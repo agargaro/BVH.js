@@ -1,0 +1,83 @@
+name: CPU benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Comma-separated suites (empty for all)
+        type: string
+        default: ''
+      baseline_ref:
+        description: Optional baseline commit/ref
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BENCH_TIME: '500'
+      BENCH_ITERATIONS: '64'
+      BENCH_WARMUP_TIME: '100'
+      BENCH_WARMUP_ITERATIONS: '8'
+      SUITE: ${{ inputs.suite }}
+      BASE_REF: ${{ inputs.baseline_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Select suites
+        shell: bash
+        run: |
+          if [ -n "$SUITE" ]; then echo "BENCH_SUITE=$SUITE" >> "$GITHUB_ENV"; fi
+      - name: Prepare base source
+        id: base
+        shell: bash
+        run: |
+          mkdir -p .cache/baseline benchmarks/results
+          if [ -n "$BASE_REF" ]; then
+            BASE_SHA=$(git rev-parse --verify --end-of-options "$BASE_REF^{commit}")
+            git archive "$BASE_SHA" src | tar -x -C .cache/baseline
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Baseline unavailable: timings are diagnostic only; no regression certification." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Paired measurements
+        if: steps.base.outputs.available == 'true'
+        shell: bash
+        run: |
+          for round in 0 1 2; do
+            if [ "$round" = 1 ]; then
+              BENCH_OUTPUT="benchmarks/results/after-$round.json" npm run bench
+              BENCH_SOURCE_ROOT=.cache/baseline BENCH_OUTPUT="benchmarks/results/before-$round.json" npm run bench
+            else
+              BENCH_SOURCE_ROOT=.cache/baseline BENCH_OUTPUT="benchmarks/results/before-$round.json" npm run bench
+              BENCH_OUTPUT="benchmarks/results/after-$round.json" npm run bench
+            fi
+          done
+          npm run bench:compare -- benchmarks/results/before-0.json benchmarks/results/after-0.json benchmarks/results/before-1.json benchmarks/results/after-1.json benchmarks/results/before-2.json benchmarks/results/after-2.json
+      - name: Diagnostic measurement
+        if: steps.base.outputs.available != 'true'
+        run: npm run bench
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpu-benchmark-results
+          path: benchmarks/results/
+          if-no-files-found: warn
+          retention-days: 14

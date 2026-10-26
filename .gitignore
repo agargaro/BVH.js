@@ -1,2 +1,7 @@
-node_modules
-dist
+node_modules/
+build/
+coverage/
+.cache/
+benchmarks/results/
+*.tsbuildinfo
+*.tgz
